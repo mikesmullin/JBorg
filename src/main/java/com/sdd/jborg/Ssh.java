@@ -62,6 +62,7 @@ public class Ssh
 			final Session.Command cmd = session.exec(command);
 			Logger.stdin(command);
 			cmd.join(); // wait indefinitely for remote process to exit
+			// TODO: update this to stream output to console instead of queueing it until the end
 			final String stdOut = IOUtils.readFully(cmd.getInputStream()).toString(StandardCharsets.UTF_8.name());
 			if (stdOut.length() > 0)
 				Logger.stdout(stdOut);
