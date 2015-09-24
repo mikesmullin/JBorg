@@ -85,19 +85,56 @@ public class Standard
 
 	// Async Flow Control
 
-	private static Queue<Callback0> queue = new ArrayDeque<>();
+	public static class Async
+	{
+		private Queue<Callback0> queue = new ArrayDeque<>();
+
+		public Async() { }
+
+		public static Params subFlow(final ScriptCallback1<Async> cb) {
+			final Async async = new Async();
+			return chainForCb(new Params(), p ->
+				handleException(() -> {
+					cb.call(async);
+					async.go();
+				}));
+		}
+
+		public void then(final Params params)
+		{
+			queue.add(params.callback);
+		}
+
+		public void end(final String reason) {
+			// skip remainder of chain
+			queue.clear();
+
+			// optionally print reason as error
+			if (reason != null)
+			{
+				Logger.err(reason);
+			}
+		}
+
+		public void go()
+		{
+			while (queue.size() > 0)
+			{
+				queue.poll().call();
+			}
+		}
+	}
+
+	private static Async flow = new Async();
 
 	public static void then(final Params params)
 	{
-		queue.add(params.callback);
+		flow.then(params);
 	}
 
 	public static void go()
 	{
-		while (queue.size() > 0)
-		{
-			queue.poll().call();
-		}
+		flow.go();
 	}
 
 	// Helpers
@@ -177,9 +214,9 @@ public class Standard
 	/**
 	 * Will notify user and abort process.
 	 */
-	public static final class DeveloperInputValidationException extends Exception
+	public static final class AbortException extends Exception
 	{
-		public DeveloperInputValidationException(String message)
+		public AbortException(String message)
 		{
 			super(message);
 		}
@@ -188,37 +225,50 @@ public class Standard
 	/**
 	 * Will step out, notify user, and continue.
 	 */
-	public static final class RemoteServerValidationException extends Exception
+	public static final class SkipException extends Exception
 	{
-		public RemoteServerValidationException(String message)
+		public SkipException(String message)
 		{
 			super(message);
 		}
 	}
 
+	public interface ScriptCallback0
+	{
+		void call()
+			throws AbortException,
+			SkipException;
+	}
+
 	public interface ScriptCallback1<T>
 	{
 		void call(final T t)
-			throws DeveloperInputValidationException,
-			RemoteServerValidationException;
+			throws AbortException,
+			SkipException;
+	}
+
+	private static void handleException(final ScriptCallback0 cb) {
+		try
+		{
+			cb.call();
+		}
+		// skip current chain link
+		catch (final SkipException e)
+		{
+			com.sdd.jborg.scripts.Standard.notifySkip(e);
+		}
+		// skip remainder of chain
+		catch (final AbortException e)
+		{
+			die(e);
+		}
 	}
 
 	public static <T extends Params> T chainForCb(final T p, final ScriptCallback1<T> cb)
 	{
-		p.callback = () -> {
-			try
-			{
-				cb.call(p);
-			}
-			catch (final RemoteServerValidationException e)
-			{
-				com.sdd.jborg.scripts.Standard.notifySkip(e);
-			}
-			catch (final DeveloperInputValidationException e)
-			{
-				die(e);
-			}
-		};
+		p.callback = () ->
+			handleException(() ->
+				cb.call(p));
 		return p;
 	}
 
@@ -247,10 +297,6 @@ public class Standard
 	public static ExecuteParams execute(final String cmd)
 	{
 		return chainForCb(new ExecuteParams(), p -> {
-			if (p.getOnlyIfTestCb() != null && !p.getOnlyIfTestCb().call()) {
-				return; // skip
-			}
-
 			// TODO: could do this with simple while loop probably; would be less complex
 			final AtomicInteger triesRemaining = new AtomicInteger(p.getRetryTimes());
 			final Container<Callback0> _try = new Container<>();
@@ -287,15 +333,18 @@ public class Standard
 					}
 					else
 					{
-						die(new RemoteServerValidationException(error + " Tried " + p.getRetryTimes() + " times. Giving up."));
+						die(new SkipException(error + " Tried " + p.getRetryTimes() + " times. Giving up."));
 					}
 				}
 
 				// TODO: wait until tries are over... DON'T invoke test on every try
 
 				if (!empty(p.getTest()))
-					p.getTest().call(code, out, err);
-				}));
+				{
+					handleException(() ->
+						p.getTest().call(code, out, err));
+				}
+			}));
 
 			_try.get().call();
 		});
@@ -310,12 +359,11 @@ public class Standard
 		});
 	}
 
-
 	public static ChownParams chown(final String path)
 	{
 		return chainForCb(new ChownParams(), p -> {
 			if (empty(p.getOwner()) || empty(p.getGroup()))
-				throw new DeveloperInputValidationException("chown owner and group are required.");
+				throw new AbortException("chown owner and group are required.");
 
 			execute("chown " +
 				(p.getRecursive() ? "-R " : "") +
@@ -331,7 +379,7 @@ public class Standard
 	{
 		return chainForCb(new ChmodParams(), p -> {
 			if (empty(p.getMode()))
-				throw new DeveloperInputValidationException("mode is required.");
+				throw new AbortException("mode is required.");
 
 			execute("chmod " +
 				p.getMode() +
@@ -388,7 +436,7 @@ public class Standard
 			execute("id " + name)
 				.setTest((code, out, err) -> {
 					if (code == 0)
-						throw new RemoteServerValidationException("user " + name + " exists.");
+						throw new SkipException("user " + name + " exists.");
 
 					execute("useradd " + name + " \\\n" +
 						"  --create-home \\\n" +
@@ -480,7 +528,7 @@ public class Standard
 				.setTest((code, out, err) -> {
 					if (code != 0)
 					{
-						throw new RemoteServerValidationException(packages + " is not installed, ignoring");
+						throw new SkipException(packages + " is not installed, ignoring");
 					}
 					else
 					{
@@ -540,7 +588,7 @@ public class Standard
 					}
 					else
 					{
-						die(new DeveloperInputValidationException("Find string not found, nothing is being replaced."));
+						die(new AbortException("Find string not found, nothing is being replaced."));
 					}
 				})
 				.setSudoCmd(p.getSudoCmd())
@@ -615,7 +663,7 @@ public class Standard
 			}
 
 			if (p.getTo() == null)
-				throw new DeveloperInputValidationException("to is a required parameter");
+				throw new AbortException("to is a required parameter");
 
 			// compile template variables
 			final String output;
@@ -663,7 +711,7 @@ public class Standard
 	{
 		return chainForCb(new UploadParams(), p -> {
 			if (p.getTo() == null)
-				throw new DeveloperInputValidationException("to is a required parameter");
+				throw new AbortException("to is a required parameter");
 
 			final String ver = tmpFile(path.toString());
 
@@ -684,7 +732,7 @@ public class Standard
 				"...");
 
 			ssh.put(path, p.getTo(), e -> {
-				die(new RemoteServerValidationException("error during SFTP file transfer: " + e.getMessage()));
+				die(new SkipException("error during SFTP file transfer: " + e.getMessage()));
 			});
 
 			Logger.info("SFTP upload complete.");

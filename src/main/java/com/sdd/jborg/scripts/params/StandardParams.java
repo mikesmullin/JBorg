@@ -1,10 +1,9 @@
 package com.sdd.jborg.scripts.params;
 
-import com.sdd.jborg.Ssh;
 import com.sdd.jborg.util.Callback0;
-import com.sdd.jborg.scripts.Standard.RemoteServerValidationException;
-import com.sdd.jborg.util.Func0;
 import com.sdd.jborg.util.Func1;
+
+import static com.sdd.jborg.scripts.Standard.*;
 
 import java.util.Map;
 
@@ -45,45 +44,28 @@ public class StandardParams
 		}
 	}
 
-	public interface ScriptRemoteTestCallback1
+	public interface ScriptRemoteTestCallback
 	{
 		void call(final int code, final String out, final String err)
-			throws RemoteServerValidationException;
+			throws SkipException, AbortException;
 	}
 
 	public static final class ExecuteParams extends Params
 	{
-		private Ssh.CmdCallback testCb;
+		private ScriptRemoteTestCallback testCb;
 		private Sudoable sudoable = new Sudoable();
 		private int retryTimes;
 		private Integer expectCode;
 		private boolean ignoreErrors = false;
 
-		private Func0<Boolean> onlyIfTestCb;
-		public ExecuteParams setOnlyIf(final Func0<Boolean> testCb) {
-			this.onlyIfTestCb = testCb;
-			return this;
-		}
-		public Func0<Boolean> getOnlyIfTestCb() {
-			return this.onlyIfTestCb;
-		}
-
-		public ExecuteParams setTest(final ScriptRemoteTestCallback1 testCb)
+		public ExecuteParams setTest(final ScriptRemoteTestCallback testCb)
+			throws SkipException, AbortException
 		{
-			this.testCb = (code, out, err) -> {
-				try
-				{
-					testCb.call(code, out, err);
-				}
-				catch (final RemoteServerValidationException e)
-				{
-					com.sdd.jborg.scripts.Standard.notifySkip(e);
-				}
-			};
+			this.testCb = testCb;
 			return this;
 		}
 
-		public Ssh.CmdCallback getTest()
+		public ScriptRemoteTestCallback getTest()
 		{
 			return testCb;
 		}
