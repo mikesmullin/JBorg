@@ -545,6 +545,11 @@ public class Standard
 	public static Params packageUpdate()
 	{
 		return chainForCb(new Params(), p -> {
+			execute("dpkg --configure -a")
+				.setSudo(true)
+				.expect(0)
+				.callImmediate();
+
 			execute("apt-get update")
 				.setSudo(true)
 				.setRetry(3)
