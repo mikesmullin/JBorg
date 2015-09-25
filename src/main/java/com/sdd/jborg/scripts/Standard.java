@@ -137,6 +137,10 @@ public class Standard
 		flow.go();
 	}
 
+	public static void now(final Params params) {
+		params.callImmediate();
+	}
+
 	// Helpers
 
 	public static String mapConcat(final String[] s, Func1<String, String> cb)
