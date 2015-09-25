@@ -158,7 +158,7 @@ public class Standard
 	public static String bashEscape(final String cmd)
 	{
 		final Matcher matcher = BASH_PATTERN.matcher(cmd);
-		return matcher.replaceAll("$1");
+		return matcher.replaceAll("\\\\$1");
 	}
 
 	public static void die(final String reason)
