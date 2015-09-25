@@ -397,40 +397,41 @@ public class Standard
 
 	public static DirectoryParams directory(final String... paths)
 	{
-		final String path = String.join(DIRECTORY_SEPARATOR, paths);
 		return chainForCb(new DirectoryParams(), p -> {
 			if (empty(p.getMode()))
 				p.setMode("0755");
 
-			execute("test -d " + path)
-				.setTest((code, out, err) -> {
-					if (code == 0)
-					{
-						Logger.info("Skipping existing directory.");
-					}
-					else
-					{
-						execute("mkdir " +
-							(p.getRecursive() ? " -p" : "") +
-							" " + path)
-							.setSudoCmd(p.getSudoCmd())
-							.callImmediate();
-					}
-					//Check if user exists
-					if (!empty(p.getOwner()) || !empty(p.getGroup()))
-						chown(path)
-							.setOwner(p.getOwner())
-							.setGroup(p.getGroup())
-							.setSudoCmd(p.getSudoCmd())
-							.callImmediate();
+			for (final String path : paths) {
+				execute("test -d " + path)
+					.setTest((code, out, err) -> {
+						if (code == 0)
+						{
+							Logger.info("Skipping existing directory.");
+						}
+						else
+						{
+							execute("mkdir " +
+								(p.getRecursive() ? " -p" : "") +
+								" " + path)
+								.setSudoCmd(p.getSudoCmd())
+								.callImmediate();
+						}
+						//Check if user exists
+						if (!empty(p.getOwner()) || !empty(p.getGroup()))
+							chown(path)
+								.setOwner(p.getOwner())
+								.setGroup(p.getGroup())
+								.setSudoCmd(p.getSudoCmd())
+								.callImmediate();
 
-					if (!empty(p.getMode()))
-						chmod(path)
-							.setMode(p.getMode())
-							.setSudoCmd(p.getSudoCmd())
-							.callImmediate();
-				})
-				.callImmediate();
+						if (!empty(p.getMode()))
+							chmod(path)
+								.setMode(p.getMode())
+								.setSudoCmd(p.getSudoCmd())
+								.callImmediate();
+					})
+					.callImmediate();
+			}
 		});
 	}
 
