@@ -10,8 +10,11 @@ import net.schmizz.sshj.transport.TransportException;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import net.schmizz.sshj.userauth.UserAuthException;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
@@ -53,6 +56,66 @@ public class Ssh
 		void call(final int code, final String out, final String err);
 	}
 
+	private static class PipeStream
+	{
+		private final InputStreamReader isr;
+		private final BufferedReader br;
+		private final StringBuffer everything;
+		private final Callback1<String> dst;
+		private boolean closed = false;
+
+		public PipeStream(final InputStream src,
+			final Callback1<String> dst)
+		{
+			isr = new InputStreamReader(src);
+			br = new BufferedReader(isr);
+			everything = new StringBuffer();
+			this.dst = dst;
+		}
+
+		public boolean isEOF() {
+			if (closed)
+			{
+				return true;
+			}
+			String line;
+			try
+			{
+				if ((line = br.readLine()) != null) { // blocks until a line is returned?
+					if (line.length() > 0)
+					{
+						dst.call(line);
+						everything.append(line);
+					}
+					return false;
+				}
+				else
+				{
+					try
+					{
+						isr.close();
+					}
+					catch (final IOException e)
+					{
+						e.printStackTrace();
+					}
+					closed = true;
+					return true;
+				}
+			}
+			catch (final IOException e)
+			{
+				e.printStackTrace();
+			}
+			closed = true;
+			return true; // its the end because an error occurred
+		}
+
+		public String getEverything() {
+			return everything.toString();
+		}
+	}
+
 	public void cmd(final String command, final CmdCallback cb)
 	{
 		Session session = null;
@@ -61,17 +124,23 @@ public class Ssh
 			session = ssh.startSession();
 			final Session.Command cmd = session.exec(command);
 			Logger.stdin(command);
+			final PipeStream out = new PipeStream(cmd.getInputStream(), Logger::stdout);
+			final PipeStream err = new PipeStream(cmd.getErrorStream(), Logger::stderr);
+			while(!(out.isEOF() && err.isEOF()))
+			{
+				// waiting...
+				try
+				{
+					Thread.sleep(0); // yield to any other threads
+				}
+				catch (final InterruptedException ignored)
+				{
+				}
+			}
 			cmd.join(); // wait indefinitely for remote process to exit
-			// TODO: update this to stream output to console instead of queueing it until the end
-			final String stdOut = IOUtils.readFully(cmd.getInputStream()).toString(StandardCharsets.UTF_8.name());
-			if (stdOut.length() > 0)
-				Logger.stdout(stdOut);
-			final String stdErr = IOUtils.readFully(cmd.getErrorStream()).toString(StandardCharsets.UTF_8.name());
-			if (stdErr.length() > 0)
-				Logger.stderr(stdErr);
 			final int code = cmd.getExitStatus();
 			Logger.info("remote process exit code: " + code);
-			cb.call(code, stdOut, stdErr);
+			cb.call(code, out.getEverything(), err.getEverything());
 		}
 		catch (final IOException e)
 		{
