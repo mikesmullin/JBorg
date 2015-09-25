@@ -945,23 +945,33 @@ public class Standard
 		});
 	}
 
-	/*
-  # appends line only if no matching line is found
-  append_line_to_file: (file, [o]...) => @inject_flow =>
-    die "@append_line_to_file() unless_find: and append: are required. you passed: "+JSON.stringify(arguments) unless o?.unless_find and o?.append
-    @then @execute "grep #{bash_esc o.unless_find} #{bash_esc file}", _.merge o, test: ({code}) =>
-      if code is 0
-        @then @log "Matching line found, not appending"
-      else
-        @then @log "Matching line not found, appending..."
-        @then @execute "echo #{bash_esc o.append} | sudo tee -a #{bash_esc file}", _.merge o, test: ({code}) =>
-          @then @die "FATAL ERROR: unable to append line." unless code is 0
+	/**
+	 * Appends line only if no matching line is found.
 	 */
-
-	public static AppendLineToFileUnlessMatchParams appendLineToFileUnlessMatch(final String path)
+	public static AppendLineToFileUnlessMatchParams appendLineToFileUnlessMatch(final String file)
 	{
 		return chainForCb(new AppendLineToFileUnlessMatchParams(), p -> {
+			if (empty(p.getMatch()) || empty(p.getAppend()))
+				throw new AbortException(".setMatch() and .setAppend() are required.");
 
+			now(execute("grep " + bashEscape(p.getMatch()) + " " + bashEscape(file))
+				.setTest((code, out, err) -> {
+					if (code == 0)
+					{
+						now(log("Matching line found, not appending"));
+					}
+					else
+					{
+						now(log("Matching line not found, appending..."));
+						now(execute("echo " + bashEscape(p.getAppend()) + " | sudo tee -a " + bashEscape(file))
+							.setTest((code2, out2, err2) -> {
+								if (code2 != 0)
+								{
+									throw new AbortException("FATAL ERROR: unable to append line.");
+								}
+							}));
+					}
+				}));
 		});
 	}
 
