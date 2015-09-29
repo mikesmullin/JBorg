@@ -606,41 +606,93 @@ public class Standard
 		});
 	}
 
+	public static LinkParams link(final String src)
+	{
+		return chainForCb(new LinkParams(), p -> {
+			if (empty(p.getTarget()))
+				throw new AbortException(".setTarget() is required.");
+
+			now(execute("test -L " + p.getTarget())
+				.setTest((code, out, err) -> {
+					if (code != 1)
+					{
+						now(execute("rm " + p.getTarget())
+							.setSudoCmd(p.getSudoCmd()));
+					}
+				}));
+
+			now(execute("ln -s " + src + " " + p.getTarget())
+				.setSudoCmd(p.getSudoCmd())
+				.expect(0));
+		});
+	}
+
+	private static final Pattern CHECKSUM_PATTERN_2 = Pattern.compile("/[a-f0-9]{40}/");
+
 	public static DeployParams deploy(final String appName)
 	{
 		return chainForCb(new DeployParams(), p -> {
+			// TODO: support shared dir, cached-copy, and symlinking logs and other stuff
+			// TODO: support keep_releases
+
 			// force sudo as deploy owner
 			p.setSudoAsUser(p.getOwner());
 
 			final String privateKeyPath = "$(echo ~" + p.getOwner() + ")/.ssh/id_rsa";
 
-			directory("$(echo ~" + p.getOwner() + ")/")
+			now(directory("$(echo ~" + p.getOwner() + ")/")
 				.setOwner(p.getOwner())
 				.setGroup(p.getGroup())
 				.setSudo(true)
 				.setRecursive(true)
-				.setMode("0700")
-				.callImmediate();
+				.setMode("0700"));
 
-			directory("$(echo ~" + p.getOwner() + ")/.ssh/")
+			now(directory("$(echo ~" + p.getOwner() + ")/.ssh/")
 				.setOwner(p.getOwner())
 				.setGroup(p.getGroup())
 				.setSudo(true)
 				.setRecursive(true)
-				.setMode("0700")
-				.callImmediate();
+				.setMode("0700"));
 
 			// write ssh key to ~/.ssh/
-			template(privateKeyPath)
+			now(template(privateKeyPath)
 				.setContent(p.getGit().getDeployKey())
 				.setOwner(p.getOwner())
 				.setGroup(p.getGroup())
 				.setMode("0600")
+				.setSudo(true));
+
+			// create the release dir
+			// TODO: find a better alternative to next line
+			now(execute("echo -e \"Host github.com\\n\\tStrictHostKeyChecking no\\n\" | sudo -u " + p.getSudoCmd() + " tee -a $(echo ~" + p.getOwner() + ")/.ssh/config"));
+			final StringBuffer remoteRef = new StringBuffer();
+			now(execute("git ls-remote " + p.getGit().getRepo() + " " + p.getGit().getBranch())
+				.setSudoCmd(p.getSudoCmd())
+				.setTest((code, out, err) -> {
+					final Matcher matcher = CHECKSUM_PATTERN_2.matcher(out);
+					if (matcher.matches())
+					{
+						die("github repo didn't have the branch we're expecting " + p.getGit().getBranch());
+					}
+					remoteRef.append(matcher.group(0));
+				}));
+			now(directory(p.getDeployTo())
+				.setOwner(p.getOwner())
+				.setGroup(p.getGroup())
 				.setSudo(true)
-				.callImmediate();
-
-			// TODO: finish
-
+				.setRecursive(true));
+			final String releaseDir = p.getDeployTo() +"/releases/"+ remoteRef.toString();
+			now(directory(releaseDir)
+				.setOwner(p.getOwner())
+				.setGroup(p.getGroup())
+				.setSudo(true)
+				.setRecursive(true));
+			now(execute("git clone -b " + p.getGit().getBranch() + " " + p.getGit().getRepo() + " " + releaseDir)
+				.setSudoCmd(p.getSudoCmd())
+				.setIgnoreErrors(true));
+			now(link(releaseDir)
+				.setTarget(p.getDeployTo() + "/current")
+				.setSudoCmd(p.getSudoCmd()));
 		});
 	}
 
