@@ -1,6 +1,6 @@
 package com.sdd.jborg.scripts;
 
-import static com.sdd.jborg.scripts.params.StandardParams.*;
+import com.sdd.jborg.scripts.params.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.sdd.jborg.scripts.params.StandardParams.*;
+import com.sdd.jborg.scripts.params.*;
 import static com.sdd.jborg.util.Crypto.Algorithm.*;
 
 /**
