@@ -69,6 +69,19 @@ public class Standard
 		void createVirtualMachine();
 
 		String getKeyName();
+
+		public static void delay(final int ms, final String reason)
+		{
+			try
+			{
+				Logger.info("Waiting " + ms + "ms " + reason + "...");
+				Thread.sleep(ms);
+			}
+			catch (final InterruptedException e)
+			{
+				e.printStackTrace();
+			}
+		}
 	}
 
 	public interface Datacenter

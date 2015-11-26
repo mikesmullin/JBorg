@@ -286,7 +286,7 @@ public class OpenStack
 			Main.die(new Exception("OpenStack reports no available public IPs."));
 		}
 
-		delay(30 * 1_000, "for instance to finish initializing");
+		CloudDriver.delay(30 * 1_000, "for instance to finish initializing");
 
 		post(":8774/v2/" + projectId + "/servers/" + serverId + "/action",
 			"{\"addFloatingIp\": {\"address\": \"" + ip + "\"}}");
