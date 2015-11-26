@@ -19,7 +19,7 @@ public class Main
 		switch (args[0].toLowerCase())
 		{
 			case "assemble":
-				server.getDatacenter().getProvider().createVirtualMachine();
+				server.getDatacenter().getCloudDriver().createVirtualMachine();
 
 				// flow through to assimilate
 

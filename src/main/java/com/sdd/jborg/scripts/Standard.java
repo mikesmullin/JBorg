@@ -64,7 +64,7 @@ public class Standard
 	}
 
 	// Global Attributes
-	public interface Provider
+	public interface CloudDriver
 	{
 		void createVirtualMachine();
 
@@ -73,7 +73,7 @@ public class Standard
 
 	public interface Datacenter
 	{
-		Provider getProvider();
+		CloudDriver getCloudDriver();
 
 		String getTld();
 	}

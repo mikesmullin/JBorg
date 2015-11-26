@@ -33,7 +33,6 @@ import static com.sdd.jborg.scripts.Standard.*;
 //	}
 //}
 
-import com.sdd.jborg.Logger;
 //import com.sdd.jborg.scripts.Standard;
 //import org.jclouds.ContextBuilder;
 //import org.jclouds.compute.ComputeService;
@@ -53,7 +52,7 @@ import com.sdd.jborg.Logger;
 //import org.jclouds.location.reference.LocationConstants;
 
 public class Aws
-	implements Provider
+	implements CloudDriver
 {
 	public void createVirtualMachine()
 	{

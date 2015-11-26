@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 import static com.sdd.jborg.scripts.Standard.*;
 
 public class OpenStack
-	implements Provider
+	implements CloudDriver
 {
 	private static final Resty resty = new Resty();
 	private String token;
