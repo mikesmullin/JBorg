@@ -13,5 +13,6 @@ dependencies {
     compile 'org.slf4j:slf4j-nop:1.7.12'
     compile 'org.codehaus.groovy:groovy-templates:2.4.4'
     compile 'us.monoid.web:resty:0.3.2'
+	compile 'com.amazonaws:aws-java-sdk:1.10.37'
     testCompile 'junit:junit:4.12'
 }
