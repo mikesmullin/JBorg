@@ -640,7 +640,7 @@ public class Standard
 		});
 	}
 
-	private static final Pattern CHECKSUM_PATTERN_2 = Pattern.compile("/[a-f0-9]{40}/");
+	private static final Pattern CHECKSUM_PATTERN_2 = Pattern.compile("([a-f0-9]{40})\\s.+");
 
 	public static DeployParams deploy(final String appName)
 	{
@@ -651,6 +651,7 @@ public class Standard
 			// force sudo as deploy owner
 			p.setSudoAsUser(p.getOwner());
 
+			// TODO: use unique key name to avoid accidentally overwriting different key
 			final String privateKeyPath = "$(echo ~" + p.getOwner() + ")/.ssh/id_rsa";
 
 			now(directory("$(echo ~" + p.getOwner() + ")/")
@@ -678,24 +679,26 @@ public class Standard
 			// create the release dir
 			// TODO: find a better alternative to next line
 			now(execute("echo -e \"Host github.com\\n\\tStrictHostKeyChecking no\\n\" | sudo -u " + p.getSudoCmd() + " tee -a $(echo ~" + p.getOwner() + ")/.ssh/config"));
+			// StringBuffers so we can modify it async from inside lambdas below
+			final StringBuffer releaseDir = new StringBuffer();
 			final StringBuffer remoteRef = new StringBuffer();
 			now(execute("git ls-remote " + p.getGit().getRepo() + " " + p.getGit().getBranch())
 				.setSudoCmd(p.getSudoCmd())
 				.setTest((code, out, err) -> {
 					final Matcher matcher = CHECKSUM_PATTERN_2.matcher(out);
-					if (matcher.matches())
+					if (!matcher.matches())
 					{
 						die("github repo didn't have the branch we're expecting " + p.getGit().getBranch());
 					}
-					remoteRef.append(matcher.group(0));
+					remoteRef.append(matcher.group(1));
+					releaseDir.append(p.getDeployTo() +"/releases/"+ remoteRef.toString());
 				}));
 			now(directory(p.getDeployTo())
 				.setOwner(p.getOwner())
 				.setGroup(p.getGroup())
 				.setSudo(true)
 				.setRecursive(true));
-			final String releaseDir = p.getDeployTo() +"/releases/"+ remoteRef.toString();
-			now(directory(releaseDir)
+			now(directory(releaseDir.toString())
 				.setOwner(p.getOwner())
 				.setGroup(p.getGroup())
 				.setSudo(true)
@@ -703,7 +706,7 @@ public class Standard
 			now(execute("git clone -b " + p.getGit().getBranch() + " " + p.getGit().getRepo() + " " + releaseDir)
 				.setSudoCmd(p.getSudoCmd())
 				.setIgnoreErrors(true));
-			now(link(releaseDir)
+			now(link(releaseDir.toString())
 				.setTarget(p.getDeployTo() + "/current")
 				.setSudoCmd(p.getSudoCmd()));
 		});
