@@ -619,22 +619,19 @@ public class Standard
 		});
 	}
 
-	public static LinkParams link(final String src)
+	public static LinkParams link(final String src, final String target)
 	{
 		return chainForCb(new LinkParams(), p -> {
-			if (empty(p.getTarget()))
-				throw new AbortException(".setTarget() is required.");
-
-			now(execute("test -L " + p.getTarget())
+			now(execute("test -L " + target)
 				.setTest((code, out, err) -> {
 					if (code != 1)
 					{
-						now(execute("rm " + p.getTarget())
+						now(execute("rm " +target)
 							.setSudoCmd(p.getSudoCmd()));
 					}
 				}));
 
-			now(execute("ln -s " + src + " " + p.getTarget())
+			now(execute("ln -s " + src + " " + target)
 				.setSudoCmd(p.getSudoCmd())
 				.expect(0));
 		});
@@ -706,8 +703,7 @@ public class Standard
 			now(execute("git clone -b " + p.getGit().getBranch() + " " + p.getGit().getRepo() + " " + releaseDir)
 				.setSudoCmd(p.getSudoCmd())
 				.setIgnoreErrors(true));
-			now(link(releaseDir.toString())
-				.setTarget(p.getDeployTo() + "/current")
+			now(link(releaseDir.toString(), p.getDeployTo() + "/current")
 				.setSudoCmd(p.getSudoCmd()));
 		});
 	}

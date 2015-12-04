@@ -9,9 +9,10 @@ public final class DownloadParams extends Params
 		return checksum;
 	}
 
-	public void setChecksum(final String checksum)
+	public DownloadParams setChecksum(final String checksum)
 	{
 		this.checksum = checksum;
+		return this;
 	}
 
 	private Ownable ownable = new Ownable();
@@ -43,6 +44,12 @@ public final class DownloadParams extends Params
 	public String getMode()
 	{
 		return modeable.getMode();
+	}
+
+	public DownloadParams setMode(final String mode)
+	{
+		modeable.setMode(mode);
+		return this;
 	}
 
 	private Sudoable sudoable = new Sudoable();
