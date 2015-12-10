@@ -1,6 +1,6 @@
 package com.sdd.jborg.cloud;
 
-import static com.sdd.jborg.Standard.*;
+import static com.sdd.jborg.scripts.Standard.*;
 
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.services.ec2.AmazonEC2Client;
@@ -131,7 +131,7 @@ public class Aws
 		waiting:
 		while (true)
 		{
-			CloudDriver.delay(6 * 1_000, "for instance state \"running\"");
+			delay(6 * 1_000, "for instance state \"running\"");
 
 			final DescribeInstancesResult describeInstancesResult =
 				ec2Client.describeInstances(new DescribeInstancesRequest()
@@ -171,7 +171,7 @@ public class Aws
 		server.ssh.user = "ubuntu";
 		server.ssh.key = keyName;
 
-		CloudDriver.delay(60 * 1_000, "for instance to accept SSH connections");
+		delay(60 * 1_000, "for instance to accept SSH connections");
 		Logger.info("done creating new AWS instance "+ instanceId +".");
 	}
 

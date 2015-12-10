@@ -1,13 +1,15 @@
-package com.sdd.jborg;
+package com.sdd.jborg.scripts;
 
+import com.sdd.jborg.Main;
+import com.sdd.jborg.Server;
 import com.sdd.jborg.util.Callback0;
+import com.sdd.jborg.util.Container;
 import com.sdd.jborg.util.Crypto;
 import com.sdd.jborg.util.FileSystem;
 import com.sdd.jborg.util.Func1;
 import com.sdd.jborg.util.Logger;
 import com.sdd.jborg.util.Ssh;
 import groovy.text.StreamingTemplateEngine;
-import org.reflections.Reflections;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -20,67 +22,81 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.sdd.jborg.params.*;
+import org.reflections.Reflections;
+
 import static com.sdd.jborg.util.Crypto.Algorithm.*;
 
 /**
- * Standard fields and methods every script should have in scope.
+ * Standard objects and methods every script should have in scope by default.
  */
 public class Standard
 {
-	/**
-	 * Base Script class all scripts must extend.
-	 */
-	public static abstract class Script
-	{
-		// TODO: pass namespace in via config
-		private static final Set<Class<? extends Script>> scripts = new Reflections("com.wildworks.devops").getSubTypesOf(Script.class);
+	// Script interface and include() helpers
+	//------------------------------------------------------------------
 
-		public static Script findMatch()
+	/**
+	 * All implementations will automatically have matches() invoked
+	 * once at startup in random order to self-determine whether
+	 * they should be implicitly included().
+	 *
+	 * Otherwise, implementations must be explicitly included()
+	 * from other scripts to have any effect or to be ordered.
+	 */
+	public interface Script
+	{
+		default boolean matches()
 		{
-			for (Class<? extends Script> script : scripts)
-			{
-				final Script instance;
-				try
-				{
-					instance = script.newInstance();
-					if (instance.match())
-					{
-						return instance;
-					}
-				}
-				catch (InstantiationException | IllegalAccessException e)
-				{
-					e.printStackTrace();
-				}
-			}
-			return null;
+			return false;
 		}
 
-		abstract public boolean match();
-
-		abstract public void assimilate();
+		void included();
 	}
 
-	// Global Attributes
-	public interface CloudDriver
+	private static Set<Class<? extends Script>> scripts =
+		new Reflections(System.getProperty("namespace")).getSubTypesOf(Script.class);
+
+	public static boolean includeAllMatching()
 	{
-		void createVirtualMachine();
-
-		String getKeyName();
-
-		public static void delay(final int ms, final String reason)
+		boolean foundOne = false;
+		for (final Class<? extends Script> script : scripts)
 		{
+			final com.sdd.jborg.scripts.Standard.Script instance;
 			try
 			{
-				Logger.info("Waiting " + ms + "ms " + reason + "...");
-				Thread.sleep(ms);
+				instance = script.newInstance();
+				if (instance.matches())
+				{
+					foundOne = true;
+					instance.included();
+				}
 			}
-			catch (final InterruptedException e)
+			catch (InstantiationException | IllegalAccessException e)
 			{
 				e.printStackTrace();
 			}
 		}
+		return foundOne;
 	}
+
+	public static void include(final Class<? extends Script> cls)
+	{
+		try
+		{
+			cls.newInstance().included();
+		}
+		catch (IllegalAccessException | InstantiationException e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	// Global attributes and common interfaces
+	//------------------------------------------------------------------
+
+	public static final Server server = new Server();
+	public static Ssh ssh;
+	public static String tz;
+	public static boolean permitReboot = false;
 
 	public interface Datacenter
 	{
@@ -89,12 +105,17 @@ public class Standard
 		String getTld();
 	}
 
-	public static final Server server = new Server(); // a.k.a. "locals"
-	public static Ssh ssh;
-	public static String tz;
-	public static boolean permitReboot = false;
+	public interface CloudDriver
+	{
+		void createVirtualMachine();
 
-	// Async Flow Control
+		String getKeyName();
+	}
+
+	// Procedural asynchronous flow control;
+	// Use this instead of standard Java flow control operators (for, while, if, try, etc.)
+	// to achieve a modular, parallelized, 2-pass approach to devops script runtime compilation.
+	//------------------------------------------------------------------
 
 	public static class Async
 	{
@@ -102,10 +123,10 @@ public class Standard
 
 		public Async() { }
 
-		public static Params subFlow(final ScriptCallback1<Async> cb) {
+		public static Params subFlow(final Standard.ScriptCallback1<Async> cb) {
 			final Async async = new Async();
-			return chainForCb(new Params(), p ->
-				handleException(() -> {
+			return Standard.chainForCb(new Params(), p ->
+				Standard.handleException(() -> {
 					cb.call(async);
 					async.go();
 				}));
@@ -153,6 +174,7 @@ public class Standard
 	}
 
 	// Helpers
+	//------------------------------------------------------------------
 
 	public static String mapConcat(final String[] s, Func1<String, String> cb)
 	{
@@ -262,7 +284,7 @@ public class Standard
 			SkipException;
 	}
 
-	private static void handleException(final ScriptCallback0 cb) {
+	static void handleException(final ScriptCallback0 cb) {
 		try
 		{
 			cb.call();
@@ -287,20 +309,10 @@ public class Standard
 		return p;
 	}
 
-	private static final class Container<T>
-	{
-		private T t;
-
-		public void set(final T t)
-		{
-			this.t = t;
-		}
-
-		public T get()
-		{
-			return t;
-		}
-	}
+	// Resource methods;
+	// Use these instead of straight bash commands in order to achieve
+	// more convenient and OS-agnostic devops scripting.
+	//------------------------------------------------------------------
 
 	public static Params log(final String msg)
 	{
@@ -502,18 +514,6 @@ public class Standard
 				})
 				.callImmediate();
 		});
-	}
-
-	public static void include(final Class<? extends Includable> cls)
-	{
-		try
-		{
-			cls.newInstance().included();
-		}
-		catch (IllegalAccessException | InstantiationException e)
-		{
-			e.printStackTrace();
-		}
 	}
 
 	public static Params install(final String packages)
@@ -911,11 +911,6 @@ public class Standard
 	public static String bashPrefix(String flag)
 	{
 		return " " + flag + " ";
-	}
-
-	public interface Includable
-	{
-		void included();
 	}
 
 	private static final Pattern CHECKSUM_PATTERN = Pattern.compile("/[a-f0-9]{64}/");

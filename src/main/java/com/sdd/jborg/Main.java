@@ -3,7 +3,7 @@ package com.sdd.jborg;
 import com.sdd.jborg.util.Logger;
 import com.sdd.jborg.util.Ssh;
 
-import static com.sdd.jborg.Standard.*;
+import static com.sdd.jborg.scripts.Standard.*;
 
 public class Main
 {
@@ -11,14 +11,13 @@ public class Main
 	{
 		server.setFqdn(args[1]);
 
-		final Script script = Script.findMatch();
-		if (script == null)
+		// pass 1: compilation
+		if (!includeAllMatching())
 		{
-			Logger.err("Unable to locate matching script.");
-			return;
+			die(new RuntimeException("Unable to locate matching script."));
 		}
-		script.assimilate(); // loop 1
 
+		// pass 2: execution
 		switch (args[0].toLowerCase())
 		{
 			case "assemble":

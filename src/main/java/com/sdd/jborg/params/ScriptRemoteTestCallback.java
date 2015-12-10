@@ -1,6 +1,6 @@
 package com.sdd.jborg.params;
 
-import com.sdd.jborg.Standard;
+import com.sdd.jborg.scripts.Standard;
 
 public interface ScriptRemoteTestCallback
 {

@@ -14,7 +14,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
-import static com.sdd.jborg.Standard.*;
+import static com.sdd.jborg.scripts.Standard.*;
 
 public class OpenStack
 	implements CloudDriver
@@ -286,7 +286,7 @@ public class OpenStack
 			Main.die(new Exception("OpenStack reports no available public IPs."));
 		}
 
-		CloudDriver.delay(30 * 1_000, "for instance to finish initializing");
+		delay(30 * 1_000, "for instance to finish initializing");
 
 		post(":8774/v2/" + projectId + "/servers/" + serverId + "/action",
 			"{\"addFloatingIp\": {\"address\": \"" + ip + "\"}}");

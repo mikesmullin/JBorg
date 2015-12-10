@@ -3,10 +3,10 @@ package com.sdd.jborg.scripts;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import static com.sdd.jborg.Standard.*;
+import static com.sdd.jborg.scripts.Standard.*;
 
 public final class Sudo
-	implements Includable
+	implements Script
 {
 	@Override
 	public void included()
