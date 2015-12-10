@@ -71,7 +71,7 @@ public class Standard
 			}
 			catch (InstantiationException | IllegalAccessException e)
 			{
-				e.printStackTrace();
+				die(e);
 			}
 		}
 		return foundOne;
@@ -85,7 +85,7 @@ public class Standard
 		}
 		catch (IllegalAccessException | InstantiationException e)
 		{
-			e.printStackTrace();
+			die(e);
 		}
 	}
 
