@@ -9,7 +9,6 @@ import com.sdd.jborg.util.Func1;
 import com.sdd.jborg.util.Logger;
 import com.sdd.jborg.util.ModifiedStreamingTemplateEngine;
 import com.sdd.jborg.util.Ssh;
-import groovy.text.StreamingTemplateEngine;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -316,12 +315,15 @@ public class Standard
 
 	public static void die(final String reason)
 	{
-		Main.die(new Exception(reason));
-	}
-
-	public static void die(final Exception reason)
-	{
 		Main.die(reason);
+	}
+	public static void die(final Throwable detail)
+	{
+		Main.die(detail);
+	}
+	public static void die(final String reason, final Throwable detail)
+	{
+		Main.die(reason, detail);
 	}
 
 	public static void notifySkip(final Exception reason)
@@ -421,6 +423,8 @@ public class Standard
 		}
 	}
 
+	// TODO: would be helpful to capture and remember stack traces where then() was invoked
+	//       and display those with die() output to console.
 	public static <T extends Params> T chainForCb(final T p, final ScriptCallback1<T> cb)
 	{
 		p.callback = () ->
@@ -861,9 +865,9 @@ public class Standard
 					.make(p.getVariables())
 					.toString();
 			}
-			catch (ClassNotFoundException | IOException e)
+			catch (final Exception e)
 			{
-				e.printStackTrace();
+				die("Unable to compile template for remote file " + remoteTargetFile, e);
 				return; // abort
 			}
 

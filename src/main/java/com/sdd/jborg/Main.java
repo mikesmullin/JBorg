@@ -43,10 +43,35 @@ public class Main
 		}
 	}
 
-	public static void die(final Exception reason)
+	public static void die(final String reason)
 	{
-		Logger.err("Aborting. Reason: " + reason.getMessage());
-		reason.printStackTrace();
-		System.exit(1);
+		die(reason, null);
+	}
+
+	public static void die(final Throwable reason)
+	{
+		die(null, reason);
+	}
+
+	public static void die(final String reason, final Throwable detail)
+	{
+		Logger.err("Aborting." + (reason == null ? "" : " Reason: " + reason));
+		try
+		{
+			// necessary or messages will print out-of-order.
+			// not totally sure why but must be multiple threads somewhere
+			Thread.sleep(250);
+		}
+		catch (final InterruptedException ignored)
+		{
+		}
+		finally
+		{
+			if (detail != null)
+			{
+				detail.printStackTrace();
+			}
+			System.exit(1);
+		}
 	}
 }
