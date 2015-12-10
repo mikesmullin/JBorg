@@ -59,7 +59,7 @@ public class Standard
 		boolean foundOne = false;
 		for (final Class<? extends Script> script : scripts)
 		{
-			final com.sdd.jborg.scripts.Standard.Script instance;
+			final Script instance;
 			try
 			{
 				instance = script.newInstance();
@@ -195,18 +195,18 @@ public class Standard
 	public static String tz;
 	public static boolean permitReboot = false;
 
-	public interface Datacenter
-	{
-		CloudDriver getCloudDriver();
-
-		String getTld();
-	}
-
 	public interface CloudDriver
 	{
 		void createVirtualMachine();
 
 		String getKeyName();
+	}
+
+	public interface Datacenter
+	{
+		CloudDriver getCloudDriver();
+
+		String getTld();
 	}
 
 	// Procedural asynchronous flow control;
@@ -413,9 +413,7 @@ public class Standard
 
 	public static Params log(final String msg)
 	{
-		return chainForCb(new Params(), p -> {
-			Logger.info(msg);
-		});
+		return chainForCb(new Params(), p -> Logger.info(msg));
 	}
 
 	public static ExecuteParams execute(final String cmd)
