@@ -7,10 +7,13 @@ import com.sdd.jborg.util.Crypto;
 import com.sdd.jborg.util.FileSystem;
 import com.sdd.jborg.util.Func1;
 import com.sdd.jborg.util.Logger;
+import com.sdd.jborg.util.ModifiedStreamingTemplateEngine;
 import com.sdd.jborg.util.Ssh;
 import groovy.text.StreamingTemplateEngine;
 
 import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
@@ -780,7 +783,7 @@ public class Standard
 
 			// write ssh key to ~/.ssh/
 			now(template(privateKeyPath)
-				.setContent(p.getGit().getDeployKey())
+				.setTemplateBody(p.getGit().getDeployKey())
 				.setOwner(p.getOwner())
 				.setGroup(p.getGroup())
 				.setMode("0600")
@@ -833,30 +836,26 @@ public class Standard
 	 * Template engine syntax and details:
 	 * http://docs.groovy-lang.org/latest/html/documentation/template-engines.html#_streamingtemplateengine
 	 */
-	public static TemplateParams template(final String path)
+	public static TemplateParams template(final String remoteTargetFile)
 	{
 		return chainForCb(new TemplateParams(), p -> {
-			final String template;
-			if (p.getContent() != null)
+			final Reader template;
+			// template from string
+			if (p.getTemplateBody() != null)
 			{
-				// template from string
-				p.setTo(path);
-				template = p.getContent();
+				template = new StringReader(p.getTemplateBody());
 			}
+			// template from local disk
 			else
 			{
-				// template from disk
-				template = FileSystem.readFileToString(path + ".template");
+				template = FileSystem.getFileReader(p.getLocalTemplateFile());
 			}
-
-			if (p.getTo() == null)
-				throw new AbortException("to is a required parameter");
 
 			// compile template variables
 			final String output;
 			try
 			{
-				output = new StreamingTemplateEngine()
+				output = new ModifiedStreamingTemplateEngine()
 					.createTemplate(template)
 					.make(p.getVariables())
 					.toString();
@@ -869,7 +868,7 @@ public class Standard
 
 			// log for debugging purposes
 			final String ver = tmpFile(output);
-			Logger.info("rendering file " + p.getTo() + " version " + ver);
+			Logger.info("rendering file " + remoteTargetFile + " version " + ver);
 			Logger.out("---- BEGIN FILE ----\n" + output + "\n--- END FILE ---");
 
 			// write string to temporary file on local disk
@@ -879,7 +878,7 @@ public class Standard
 			// upload file to remote disk
 			upload(tmpFile)
 				.setTo("/tmp/remote-" + ver)
-				.setFinalTo(p.getTo())
+				.setFinalTo(remoteTargetFile)
 				.setSudoCmd(p.getSudoCmd())
 				.setOwner(p.getOwner())
 				.setGroup(p.getGroup())

@@ -2,31 +2,32 @@ package com.sdd.jborg.params;
 
 import java.util.Map;
 
-public final class TemplateParams extends Params
+public final class TemplateParams
+	extends Params
 {
-	private String to;
+	private String localTemplateFile;
 
-	public String getTo()
+	public String getLocalTemplateFile()
 	{
-		return to;
+		return localTemplateFile;
 	}
 
-	public TemplateParams setTo(final String to)
+	public TemplateParams setLocalTemplateFile(final String localTemplateFile)
 	{
-		this.to = to;
+		this.localTemplateFile = localTemplateFile;
 		return this;
 	}
 
-	private String content;
+	private String templateBody;
 
-	public String getContent()
+	public String getTemplateBody()
 	{
-		return content;
+		return templateBody;
 	}
 
-	public TemplateParams setContent(final String content)
+	public TemplateParams setTemplateBody(final String templateBody)
 	{
-		this.content = content;
+		this.templateBody = templateBody;
 		return this;
 	}
 

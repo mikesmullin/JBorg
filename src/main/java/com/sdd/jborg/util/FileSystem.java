@@ -2,11 +2,14 @@ package com.sdd.jborg.util;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import static com.sdd.jborg.scripts.Standard.*;
 
 public class FileSystem
 {
@@ -15,19 +18,49 @@ public class FileSystem
 		return new String(readFileToBytes(path), StandardCharsets.UTF_8);
 	}
 
-	public static byte[] readFileToBytes(final String path)
+	private static void giveUp(final String path, final Exception e)
+	{
+		die(new RuntimeException("Unable to load " + path + ".", e));
+	}
+
+	private static File findFile(final String path)
 	{
 		try
 		{
 			final ClassLoader classLoader = FileSystem.class.getClassLoader();
 			final File file = new File(classLoader.getResource(path).getFile());
-			return Files.readAllBytes(file.toPath());
+			return file;
 		}
 		catch (final Exception e)
 		{
-			System.err.println("Unable to load " + path + ". " + e.toString());
-			System.exit(1);
-			return new byte[0];
+			giveUp(path, e);
+			return null;
+		}
+	}
+
+	public static FileReader getFileReader(final String path)
+	{
+		try
+		{
+			return new FileReader(findFile(path));
+		}
+		catch (final FileNotFoundException e)
+		{
+			giveUp(path, e);
+			return null;
+		}
+	}
+
+	public static byte[] readFileToBytes(final String path)
+	{
+		try
+		{
+			return Files.readAllBytes(findFile(path).toPath());
+		}
+		catch (IOException e)
+		{
+			giveUp(path, e);
+			return null;
 		}
 	}
 
@@ -42,7 +75,7 @@ public class FileSystem
 			writer = new PrintWriter(path.toString());
 			writer.write(content);
 		}
-		catch (FileNotFoundException e)
+		catch (final FileNotFoundException e)
 		{
 			e.printStackTrace();
 		}
@@ -61,8 +94,8 @@ public class FileSystem
 		try {
 			Files.delete(path);
 		}
-		catch (IOException e) {
-			e.printStackTrace();
+		catch (final IOException e) {
+			giveUp(path.toString(), e);
 		}
 	}
 }
