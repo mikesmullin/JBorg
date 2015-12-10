@@ -855,6 +855,7 @@ public class Standard
 			final String output;
 			try
 			{
+				// TODO: still need to include the global `server` variable in-scope for all templates automatically
 				output = new ModifiedStreamingTemplateEngine()
 					.createTemplate(template)
 					.make(p.getVariables())
