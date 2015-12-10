@@ -12,10 +12,12 @@ public class Main
 		server.setFqdn(args[1]);
 
 		// pass 1: compilation
+		includeIfPresent("First");
 		if (!includeAllMatching())
 		{
 			die(new RuntimeException("Unable to locate matching script."));
 		}
+		includeIfPresent("Last");
 
 		// pass 2: execution
 		switch (args[0].toLowerCase())

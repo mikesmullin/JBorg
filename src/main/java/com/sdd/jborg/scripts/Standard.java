@@ -77,6 +77,26 @@ public class Standard
 		return foundOne;
 	}
 
+	public static void includeIfPresent(final String className)
+	{
+		for (final Class<? extends Script> script : scripts)
+		{
+			if (className.equals(script.getSimpleName())) {
+				final Script instance;
+				try
+				{
+					instance = script.newInstance();
+					instance.included();
+					return;
+				}
+				catch (InstantiationException | IllegalAccessException e)
+				{
+					die(e);
+				}
+			}
+		}
+	}
+
 	public static void include(final Class<? extends Script> cls)
 	{
 		try
