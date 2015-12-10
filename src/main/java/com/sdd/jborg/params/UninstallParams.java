@@ -1,4 +1,4 @@
-package com.sdd.jborg.scripts.params;
+package com.sdd.jborg.params;
 
 public final class UninstallParams extends Params
 {

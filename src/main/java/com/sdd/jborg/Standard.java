@@ -1,13 +1,11 @@
-package com.sdd.jborg.scripts;
+package com.sdd.jborg;
 
-import com.sdd.jborg.Logger;
-import com.sdd.jborg.Main;
-import com.sdd.jborg.Server;
-import com.sdd.jborg.Ssh;
 import com.sdd.jborg.util.Callback0;
 import com.sdd.jborg.util.Crypto;
 import com.sdd.jborg.util.FileSystem;
 import com.sdd.jborg.util.Func1;
+import com.sdd.jborg.util.Logger;
+import com.sdd.jborg.util.Ssh;
 import groovy.text.StreamingTemplateEngine;
 import org.reflections.Reflections;
 
@@ -21,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.sdd.jborg.scripts.params.*;
+import com.sdd.jborg.params.*;
 import static com.sdd.jborg.util.Crypto.Algorithm.*;
 
 /**
@@ -272,7 +270,7 @@ public class Standard
 		// skip current chain link
 		catch (final SkipException e)
 		{
-			com.sdd.jborg.scripts.Standard.notifySkip(e);
+			Standard.notifySkip(e);
 		}
 		// skip remainder of chain
 		catch (final AbortException e)

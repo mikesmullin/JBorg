@@ -1,6 +1,7 @@
 package com.sdd.jborg.scripts;
 
-import com.sdd.jborg.scripts.params.*;
+import com.sdd.jborg.Standard;
+import com.sdd.jborg.params.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,8 +9,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static com.sdd.jborg.scripts.Standard.*;
 
 public class Hosts
 {
@@ -35,7 +34,7 @@ public class Hosts
 
 	public static HostsFileEntryParams hostsFileEntry(final String ip, final String[] hostnames)
 	{
-		return chainForCb(new HostsFileEntryParams(), p -> {
+		return Standard.chainForCb(new HostsFileEntryParams(), p -> {
 			// NOTICE: we replace all matching lines in the /etc/hosts file every time this method is invoked,
 			// but we also remember, concatenate, and sort unique hostname assignments between calls,
 			// so as to have a snowball effect until the final invocation which will have everything.
@@ -60,12 +59,12 @@ public class Hosts
 			// TODO: ensure hostname list is unique for this ip
 
 			// remove any lines referring to the same ip; this prevents duplicates
-			execute("sed -i '/^"+ ip +"/d' /etc/hosts")
+			Standard.execute("sed -i '/^"+ ip +"/d' /etc/hosts")
 				.setSudo(true)
 				.callImmediate();
 
 			// append ip and hostnames
-			execute("echo "+ ip +" "+ String.join(" ", existingList) +" | sudo tee -a /etc/hosts >/dev/null")
+			Standard.execute("echo "+ ip +" "+ String.join(" ", existingList) +" | sudo tee -a /etc/hosts >/dev/null")
 				.expect(0)
 				.callImmediate();
 		});

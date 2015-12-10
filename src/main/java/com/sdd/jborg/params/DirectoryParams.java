@@ -1,7 +1,6 @@
-package com.sdd.jborg.scripts.params;
+package com.sdd.jborg.params;
 
-public final class ChownParams
-	extends Params
+public final class DirectoryParams extends Params
 {
 	private Sudoable sudoable = new Sudoable();
 
@@ -10,19 +9,19 @@ public final class ChownParams
 		return sudoable.getSudoCmd();
 	}
 
-	public ChownParams setSudoCmd(final String cmd)
+	public DirectoryParams setSudoCmd(final String cmd)
 	{
 		sudoable.setSudoCmd(cmd);
 		return this;
 	}
 
-	public ChownParams setSudoAsUser(final String sudoer)
+	public DirectoryParams setSudoAsUser(final String sudoer)
 	{
 		sudoable.setSudoAsUser(sudoer);
 		return this;
 	}
 
-	public ChownParams setSudo(final boolean sudo)
+	public DirectoryParams setSudo(final boolean sudo)
 	{
 		sudoable.setSudo(sudo);
 		return this;
@@ -35,7 +34,7 @@ public final class ChownParams
 		return ownable.getOwner();
 	}
 
-	public ChownParams setOwner(final String owner)
+	public DirectoryParams setOwner(final String owner)
 	{
 		ownable.setOwner(owner);
 		return this;
@@ -46,7 +45,7 @@ public final class ChownParams
 		return ownable.getGroup();
 	}
 
-	public ChownParams setGroup(final String group)
+	public DirectoryParams setGroup(final String group)
 	{
 		ownable.setGroup(group);
 		return this;
@@ -59,9 +58,22 @@ public final class ChownParams
 		return recursable.getRecursive();
 	}
 
-	public ChownParams setRecursive(final boolean recursive)
+	public DirectoryParams setRecursive(final boolean recursive)
 	{
 		recursable.setRecursive(recursive);
+		return this;
+	}
+
+	private Modeable modeable = new Modeable();
+
+	public String getMode()
+	{
+		return modeable.getMode();
+	}
+
+	public DirectoryParams setMode(final String mode)
+	{
+		modeable.setMode(mode);
 		return this;
 	}
 }

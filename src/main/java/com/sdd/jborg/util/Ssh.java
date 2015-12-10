@@ -1,6 +1,5 @@
-package com.sdd.jborg;
+package com.sdd.jborg.util;
 
-import com.sdd.jborg.util.Callback1;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.ConnectionException;
 import net.schmizz.sshj.connection.channel.direct.Session;

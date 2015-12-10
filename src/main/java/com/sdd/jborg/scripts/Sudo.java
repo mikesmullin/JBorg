@@ -3,7 +3,7 @@ package com.sdd.jborg.scripts;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import static com.sdd.jborg.scripts.Standard.*;
+import static com.sdd.jborg.Standard.*;
 
 public final class Sudo
 	implements Includable

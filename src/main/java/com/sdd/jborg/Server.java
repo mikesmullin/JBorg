@@ -3,7 +3,7 @@ package com.sdd.jborg;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.sdd.jborg.scripts.Standard.*;
+import static com.sdd.jborg.Standard.*;
 
 public final class Server
 {

@@ -1,6 +1,9 @@
 package com.sdd.jborg;
 
-import static com.sdd.jborg.scripts.Standard.*;
+import com.sdd.jborg.util.Logger;
+import com.sdd.jborg.util.Ssh;
+
+import static com.sdd.jborg.Standard.*;
 
 public class Main
 {

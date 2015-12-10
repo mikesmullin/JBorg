@@ -1,8 +1,8 @@
-package com.sdd.jborg.scripts.params;
+package com.sdd.jborg.params;
 
 import java.util.Map;
 
-public final class TemplateParams extends Params
+public final class UploadParams extends Params
 {
 	private String to;
 
@@ -11,9 +11,35 @@ public final class TemplateParams extends Params
 		return to;
 	}
 
-	public TemplateParams setTo(final String to)
+	public UploadParams setTo(final String to)
 	{
 		this.to = to;
+		return this;
+	}
+
+	private String finalTo;
+
+	public String getFinalTo()
+	{
+		return finalTo;
+	}
+
+	public UploadParams setFinalTo(final String finalTo)
+	{
+		this.finalTo = finalTo;
+		return this;
+	}
+
+	private boolean encrypted;
+
+	public boolean isEncrypted()
+	{
+		return encrypted;
+	}
+
+	public UploadParams isEncrypted(final boolean encrypted)
+	{
+		this.encrypted = encrypted;
 		return this;
 	}
 
@@ -24,7 +50,7 @@ public final class TemplateParams extends Params
 		return content;
 	}
 
-	public TemplateParams setContent(final String content)
+	public UploadParams setContent(final String content)
 	{
 		this.content = content;
 		return this;
@@ -37,7 +63,7 @@ public final class TemplateParams extends Params
 		return variables;
 	}
 
-	public TemplateParams setVariables(final Map variables)
+	public UploadParams setVariables(final Map variables)
 	{
 		this.variables = variables;
 		return this;
@@ -50,19 +76,19 @@ public final class TemplateParams extends Params
 		return sudoable.getSudoCmd();
 	}
 
-	public TemplateParams setSudoCmd(final String cmd)
+	public UploadParams setSudoCmd(final String cmd)
 	{
 		sudoable.setSudoCmd(cmd);
 		return this;
 	}
 
-	public TemplateParams setSudoAsUser(final String sudoer)
+	public UploadParams setSudoAsUser(final String sudoer)
 	{
 		sudoable.setSudoAsUser(sudoer);
 		return this;
 	}
 
-	public TemplateParams setSudo(final boolean sudo)
+	public UploadParams setSudo(final boolean sudo)
 	{
 		sudoable.setSudo(sudo);
 		return this;
@@ -75,7 +101,7 @@ public final class TemplateParams extends Params
 		return ownable.getOwner();
 	}
 
-	public TemplateParams setOwner(final String owner)
+	public UploadParams setOwner(final String owner)
 	{
 		ownable.setOwner(owner);
 		return this;
@@ -86,7 +112,7 @@ public final class TemplateParams extends Params
 		return ownable.getGroup();
 	}
 
-	public TemplateParams setGroup(final String group)
+	public UploadParams setGroup(final String group)
 	{
 		ownable.setGroup(group);
 		return this;
@@ -99,7 +125,7 @@ public final class TemplateParams extends Params
 		return modeable.getMode();
 	}
 
-	public TemplateParams setMode(final String mode)
+	public UploadParams setMode(final String mode)
 	{
 		modeable.setMode(mode);
 		return this;

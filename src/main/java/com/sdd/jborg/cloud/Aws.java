@@ -1,6 +1,6 @@
 package com.sdd.jborg.cloud;
 
-import static com.sdd.jborg.scripts.Standard.*;
+import static com.sdd.jborg.Standard.*;
 
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.services.ec2.AmazonEC2Client;
@@ -12,7 +12,7 @@ import com.amazonaws.services.ec2.model.InstanceNetworkInterfaceSpecification;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.Tag;
-import com.sdd.jborg.Logger;
+import com.sdd.jborg.util.Logger;
 
 import java.util.Arrays;
 

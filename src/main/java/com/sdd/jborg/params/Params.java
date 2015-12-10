@@ -1,4 +1,4 @@
-package com.sdd.jborg.scripts.params;
+package com.sdd.jborg.params;
 
 import com.sdd.jborg.util.Callback0;
 

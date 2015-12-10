@@ -1,6 +1,6 @@
-package com.sdd.jborg.scripts.params;
+package com.sdd.jborg.params;
 
-import com.sdd.jborg.scripts.Standard;
+import com.sdd.jborg.Standard;
 
 public final class ExecuteParams extends Params
 {
