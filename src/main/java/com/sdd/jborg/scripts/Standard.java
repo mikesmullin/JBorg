@@ -712,12 +712,15 @@ public class Standard
 					{
 						Logger.info("Matching lines found, replacing...");
 						final String tempFile = tmpFile(file);
-						execute("sed " + "s/" + bashEscape(find) + ".*/" + replace + "/ " + bashEscape(file) + " | " + bashEscape(p.getSudoCmd() + "tee /tmp/remote-" + tempFile) + " > /dev/null 2>&1")
+						execute("sed " + "s/" + bashEscape(find) + ".*/" +
+							(bashEscape(replace).replace("/", "\\/")) + "/ " +
+							bashEscape(file) + " | " + p.getSudoCmd() +
+							"tee /tmp/remote-" + tempFile + " > /dev/null 2>&1")
 							.setTest(((code1, out1, err1) -> {
 								if (code1 == 0)
 								{
 									execute("mv " + bashEscape("/tmp/remote-" + tempFile) + " " + bashEscape(file)).setTest((code2, out2, err2) -> {
-										if (code2 == 0)
+										if (code2 != 0)
 										{
 											Logger.err("FATAL ERROR: Unable to replace line");
 										}
