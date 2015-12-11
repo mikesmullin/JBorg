@@ -10,7 +10,6 @@ import com.sdd.jborg.util.Logger;
 import com.sdd.jborg.util.ModifiedStreamingTemplateEngine;
 import com.sdd.jborg.util.Ssh;
 
-import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.file.Path;
@@ -885,8 +884,8 @@ public class Standard
 
 			// upload file to remote disk
 			upload(tmpFile)
-				.setTo("/tmp/remote-" + ver)
-				.setFinalTo(remoteTargetFile)
+				.setRemoteTmpFile("/tmp/remote-" + ver)
+				.setRemoteTargetFile(remoteTargetFile)
 				.setSudoCmd(p.getSudoCmd())
 				.setOwner(p.getOwner())
 				.setGroup(p.getGroup())
@@ -898,52 +897,57 @@ public class Standard
 		});
 	}
 
+	public static UploadParams upload(final String path)
+	{
+		return upload(Paths.get(path));
+	}
+
 	/**
 	 * upload a file from localhost to the remote host with sftp
 	 */
 	public static UploadParams upload(final Path path)
 	{
 		return chainForCb(new UploadParams(), p -> {
-			if (p.getTo() == null)
+			if (p.getRemoteTmpFile() == null)
 				throw new AbortException("to is a required parameter");
 
 			final String ver = tmpFile(path.toString());
 
 			// TODO: implement file decryption
 
-			if (p.getFinalTo() == null)
+			if (p.getRemoteTargetFile() == null)
 			{
-				p.setFinalTo(p.getTo());
-				p.setTo("/tmp/remote-" + ver);
+				p.setRemoteTargetFile(p.getRemoteTmpFile());
+				p.setRemoteTmpFile("/tmp/remote-" + ver);
 			}
 
 			// TODO: check if remote file exists
 
 			Logger.info("SFTP uploading " + path.toFile().length() + " " +
 				(p.isEncrypted() ? "decrypted " : "") +
-				"bytes from \"" + path + "\" to \"" + p.getFinalTo() + "\" " +
-				(!p.getFinalTo().equals(p.getTo()) ? " through temporary file \"" + p.getTo() + "\"" : "") +
+				"bytes from \"" + path + "\" to \"" + p.getRemoteTargetFile() + "\" " +
+				(!p.getRemoteTargetFile().equals(p.getRemoteTmpFile()) ? " through temporary file \"" + p.getRemoteTmpFile() + "\"" : "") +
 				"...");
 
-			ssh.put(path, p.getTo(), e -> {
+			ssh.put(path, p.getRemoteTmpFile(), e -> {
 				die(new SkipException("error during SFTP file transfer: " + e.getMessage()));
 			});
 
 			Logger.info("SFTP upload complete.");
 
 			// set ownership and permissions
-			chown(p.getTo())
+			chown(p.getRemoteTmpFile())
 				.setSudoCmd(p.getSudoCmd())
 				.setOwner(p.getOwner())
 				.setGroup(p.getGroup())
 				.callImmediate();
-			chmod(p.getTo())
+			chmod(p.getRemoteTmpFile())
 				.setSudoCmd(p.getSudoCmd())
 				.setMode(p.getMode())
 				.callImmediate();
 
 			// move into final location
-			execute("mv " + p.getTo() + " " + p.getFinalTo())
+			execute("mv " + p.getRemoteTmpFile() + " " + p.getRemoteTargetFile())
 				.setSudoCmd(p.getSudoCmd())
 				.expect(0)
 				.callImmediate();

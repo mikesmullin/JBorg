@@ -4,29 +4,29 @@ import java.util.Map;
 
 public final class UploadParams extends Params
 {
-	private String to;
+	private String remoteTmpFile;
 
-	public String getTo()
+	public String getRemoteTmpFile()
 	{
-		return to;
+		return remoteTmpFile;
 	}
 
-	public UploadParams setTo(final String to)
+	public UploadParams setRemoteTmpFile(final String remoteTmpFile)
 	{
-		this.to = to;
+		this.remoteTmpFile = remoteTmpFile;
 		return this;
 	}
 
-	private String finalTo;
+	private String remoteTargetFile;
 
-	public String getFinalTo()
+	public String getRemoteTargetFile()
 	{
-		return finalTo;
+		return remoteTargetFile;
 	}
 
-	public UploadParams setFinalTo(final String finalTo)
+	public UploadParams setRemoteTargetFile(final String finalTo)
 	{
-		this.finalTo = finalTo;
+		this.remoteTargetFile = finalTo;
 		return this;
 	}
 
