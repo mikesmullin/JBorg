@@ -1,5 +1,6 @@
 package com.sdd.jborg.params;
 
+import static com.sdd.jborg.scripts.Standard.*;
 import com.sdd.jborg.util.FileSystem;
 
 import java.nio.file.Path;
@@ -33,9 +34,9 @@ public final class UploadParams extends Params
 		return this;
 	}
 
-	public UploadParams setLocalSourceFile(final String localSourceFile)
+	public UploadParams setLocalSourceFile(final Class<? extends Script> cls, final String... localSourceFile)
 	{
-		return setLocalSourceFile(FileSystem.getResourcePath(localSourceFile));
+		return setLocalSourceFile(FileSystem.getResourcePath(cls, localSourceFile));
 	}
 
 	private boolean encrypted;

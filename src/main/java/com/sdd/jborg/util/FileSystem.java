@@ -10,36 +10,57 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static com.sdd.jborg.scripts.Standard.*;
 
 public class FileSystem
 {
+	public static String readFileToString(final Class cls, final String file)
+	{
+		return new String(readFileToBytes(getResourcePath(cls, file)), StandardCharsets.UTF_8);
+	}
+
 	public static String readFileToString(final String file)
 	{
 		return new String(readFileToBytes(getResourcePath(file)), StandardCharsets.UTF_8);
 	}
 
-	private static void giveUp(final String file, final Exception e)
+	private static void abortDueToMissingFile(final String file, final Exception e)
 	{
 		die(new RuntimeException("Unable to find file \"" + file + "\".", e));
 	}
 
-	public static Path getResourcePath(final String file)
+	public static Path getResourcePath(final Class cls, final String... path)
+	{
+		final String file = String.join("/", path);
+		final URL resource = cls.getResource(file);
+		return getResourcePath(file, resource);
+	}
+
+	public static Path getResourcePath(final String file) {
+		final ClassLoader classLoader = FileSystem.class.getClassLoader();
+		final URL resource = classLoader.getResource(file);
+		return getResourcePath(file, resource);
+	}
+
+	private static Path getResourcePath(final String file, final URL resource)
 	{
 		try
 		{
-			final ClassLoader classLoader = FileSystem.class.getClassLoader();
-			final URL resource = classLoader.getResource(file);
 			if (resource != null)
 			{
-				return new File(resource.getFile()).toPath();
+				final Path path = new File(resource.getFile()).toPath();
+				if (Files.exists(path))
+				{
+					return path;
+				}
 			}
-			giveUp(file, null);
+			abortDueToMissingFile(file, null);
 		}
 		catch (final Exception e)
 		{
-			giveUp(file, e);
+			abortDueToMissingFile(file, e);
 		}
 		return new File("").toPath(); // will never be reached
 	}
@@ -52,7 +73,7 @@ public class FileSystem
 		}
 		catch (final FileNotFoundException e)
 		{
-			giveUp(file.toString(), e);
+			abortDueToMissingFile(file.toString(), e);
 			return null;
 		}
 	}
@@ -65,7 +86,7 @@ public class FileSystem
 		}
 		catch (final IOException e)
 		{
-			giveUp(file.toString(), e);
+			abortDueToMissingFile(file.toString(), e);
 			return new byte[0]; // will never be reached
 		}
 	}
@@ -130,7 +151,7 @@ public class FileSystem
 			Files.delete(path);
 		}
 		catch (final IOException e) {
-			giveUp(path.toString(), e);
+			abortDueToMissingFile(path.toString(), e);
 		}
 	}
 }

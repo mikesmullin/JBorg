@@ -6,6 +6,7 @@ import com.sdd.jborg.util.Container;
 import com.sdd.jborg.util.Crypto;
 import com.sdd.jborg.util.FileSystem;
 import com.sdd.jborg.util.Func1;
+import com.sdd.jborg.util.JsonObject;
 import com.sdd.jborg.util.Logger;
 import com.sdd.jborg.util.ModifiedStreamingTemplateEngine;
 import com.sdd.jborg.util.Ssh;
@@ -16,7 +17,10 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
+import java.util.Date;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -118,6 +122,9 @@ public class Standard
 
 	public static final class Server
 	{
+		public final JsonObject attributes = new JsonObject();
+		public final String timestamp = (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss XX").format(new Date()));
+
 		private static final Pattern FQDN_PATTERN = Pattern.compile(
 			"^(test-)?([a-z]{2,3}-[a-z]{2,3})-([a-z]{1,5})-([a-z-]+)(\\d{2,4})(?:-([a-z]+))?(?:\\.(\\w+\\.[a-z]{2,3}))$",
 			Pattern.CASE_INSENSITIVE);
@@ -885,11 +892,13 @@ public class Standard
 				throw new AbortException("One of .setLocalTemplateFile() or .setTemplateBody() is a required parameter!");
 			}
 
+			// include the global `server` variable in-scope for all templates automatically
+			p.getVariables().put("server", server);
+
 			// compile template variables
 			final String output;
 			try
 			{
-				// TODO: still need to include the global `server` variable in-scope for all templates automatically
 				output = new ModifiedStreamingTemplateEngine()
 					.createTemplate(template)
 					.make(p.getVariables())

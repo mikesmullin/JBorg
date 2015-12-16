@@ -1,8 +1,10 @@
 package com.sdd.jborg.params;
 
+import static com.sdd.jborg.scripts.Standard.*;
 import com.sdd.jborg.util.FileSystem;
 
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.Map;
 
 public final class TemplateParams
@@ -15,9 +17,9 @@ public final class TemplateParams
 		return localTemplateFile;
 	}
 
-	public TemplateParams setLocalTemplateFile(final String localTemplateFile)
+	public TemplateParams setLocalTemplateFile(final Class<? extends Script> cls, final String... localTemplateFile)
 	{
-		this.localTemplateFile = FileSystem.getResourcePath(localTemplateFile);
+		this.localTemplateFile = FileSystem.getResourcePath(cls, localTemplateFile);
 		return this;
 	}
 
@@ -34,7 +36,7 @@ public final class TemplateParams
 		return this;
 	}
 
-	private Map variables;
+	private Map variables = new HashMap<String, Object>();
 
 	public Map getVariables()
 	{
