@@ -361,12 +361,12 @@ public class Standard
 		return value == null || value.length < 1;
 	}
 
-	public static void encryptLocalFile(final String path)
+	public static void encryptLocalFile(final Path file)
 	{
 		// NOTICE: not streaming; file must fit in memory
-		FileSystem.writeBytesToFile(FileSystem.findFile(path),
+		FileSystem.writeBytesToFile(file,
 			Crypto.encrypt(
-				FileSystem.readFileToBytes(path)));
+				FileSystem.readFileToBytes(file)));
 	}
 
 	public static String encrypt(final String s)
@@ -374,17 +374,17 @@ public class Standard
 		return Crypto.encrypt(s);
 	}
 
-	public static void decryptLocalFile(final String path)
+	public static void decryptLocalFile(final Path target)
 	{
-		decryptLocalFile(path, path);
+		decryptLocalFile(target, target);
 	}
 
-	public static void decryptLocalFile(final String path, final String alternatePath)
+	public static void decryptLocalFile(final Path source, final Path destination)
 	{
 		// NOTICE: not streaming; file must fit in memory
-		FileSystem.writeBytesToFile(FileSystem.findFile(alternatePath),
+		FileSystem.writeBytesToFile(destination,
 			Crypto.decrypt(
-				FileSystem.readFileToBytes(path)));
+				FileSystem.readFileToBytes(source)));
 	}
 
 	public static String decrypt(final String s)
@@ -504,7 +504,7 @@ public class Standard
 					}
 					else
 					{
-						die(new SkipException(error + " Tried " + p.getRetryTimes() + " times. Giving up."));
+						die(new SkipException(error + " Tried " + (p.getRetryTimes() + 1) + " time(s). Giving up."));
 					}
 				}
 				else
@@ -734,7 +734,7 @@ public class Standard
 					if (code == 0)
 					{
 						Logger.info("Matching lines found, replacing...");
-						final String tempFile = tmpFile(file);
+						final String tempFile = getHash(file);
 						execute("sed " + "s/" + bashEscape(find) + ".*/" +
 							(bashEscape(replace).replace("/", "\\/")) + "/ " +
 							bashEscape(file) + " | " + p.getSudoCmd() +
@@ -854,7 +854,7 @@ public class Standard
 		});
 	}
 
-	private static String tmpFile(final String seed)
+	private static String getHash(final String seed)
 	{
 		return Crypto.computeHash(SHA_1, seed) +
 			Long.toHexString(Double.doubleToRawLongBits(Math.random())).toUpperCase().substring(8);
@@ -876,9 +876,12 @@ public class Standard
 				template = new StringReader(p.getTemplateBody());
 			}
 			// template from local disk
-			else
+			else if (p.getLocalTemplateFile() != null)
 			{
 				template = FileSystem.getFileReader(p.getLocalTemplateFile());
+			}
+			else {
+				throw new AbortException("One of .setLocalTemplateFile() or .setTemplateBody() is a required parameter!");
 			}
 
 			// compile template variables
@@ -898,7 +901,7 @@ public class Standard
 			}
 
 			// log for debugging purposes
-			final String ver = tmpFile(output);
+			final String ver = getHash(output);
 			Logger.info("rendering file " + remoteTargetFile + " version " + ver);
 			Logger.out("---- BEGIN FILE ----\n" + output + "\n--- END FILE ---");
 
@@ -907,9 +910,9 @@ public class Standard
 			FileSystem.writeStringToFile(tmpFile, output);
 
 			// upload file to remote disk
-			upload(tmpFile)
+			upload(remoteTargetFile)
 				.setRemoteTmpFile("/tmp/remote-" + ver)
-				.setRemoteTargetFile(remoteTargetFile)
+				.setLocalSourceFile(tmpFile)
 				.setSudoCmd(p.getSudoCmd())
 				.setOwner(p.getOwner())
 				.setGroup(p.getGroup())
@@ -921,30 +924,25 @@ public class Standard
 		});
 	}
 
-	public static UploadParams upload(final String path)
-	{
-		return upload(Paths.get(path));
-	}
-
 	/**
-	 * upload a file from localhost to the remote host with sftp
+	 * Upload local file to remote host via SFTP.
 	 */
-	public static UploadParams upload(final Path path)
+	public static UploadParams upload(final String remoteTargetFile)
 	{
 		return chainForCb(new UploadParams(), p -> {
-			if (p.getRemoteTargetFile() == null)
-				throw new AbortException("to is a required parameter");
+			if (p.getLocalSourceFile() == null)
+				throw new AbortException(".setLocalSourceFile() is a required parameter!");
 
-			final String ver = tmpFile(path.toString());
-			final File localTmp;
+			final String ver = getHash(p.getLocalSourceFile().toString());
+			final Path localTmp;
 
 			if (p.isEncrypted())
 			{
-				Logger.info("Decrypting file "+ path.toString() +" to temporary location on local disk...");
+				Logger.info("Decrypting file "+ p.getLocalSourceFile().toString() +" to temporary location on local disk...");
 				try
 				{
-					localTmp = File.createTempFile("local-"+ver, "");
-					decryptLocalFile(path.toString(), localTmp.getAbsolutePath());
+					localTmp = File.createTempFile("local-"+ver, "").toPath();
+					decryptLocalFile(p.getLocalSourceFile(), localTmp);
 				}
 				catch (final IOException e)
 				{
@@ -954,39 +952,38 @@ public class Standard
 			}
 			else
 			{
-				localTmp = path.toFile();
+				localTmp = p.getLocalSourceFile();
 			}
 
-			if (p.getRemoteTargetFile() == null)
+			if (p.getRemoteTmpFile() == null)
 			{
-				p.setRemoteTargetFile(p.getRemoteTmpFile());
 				p.setRemoteTmpFile("/tmp/remote-" + ver);
 			}
 
-			remoteFileExists(p.getRemoteTargetFile())
+			remoteFileExists(remoteTargetFile)
 				.setSudoCmd(p.getSudoCmd())
-				.setCompareLocalFile(localTmp.toString())
+				.setCompareLocalFile(localTmp)
 				.setTrueCallback(() -> {
 					Logger.info("Upload would be pointless since checksums match; skipping to save time.");
 
 					// set ownership and permissions
-					chown(p.getRemoteTmpFile())
+					chown(remoteTargetFile)
 						.setSudoCmd(p.getSudoCmd())
 						.setOwner(p.getOwner())
 						.setGroup(p.getGroup())
 						.callImmediate();
-					chmod(p.getRemoteTmpFile())
+					chmod(remoteTargetFile)
 						.setSudoCmd(p.getSudoCmd())
 						.setMode(p.getMode())
 						.callImmediate();
 				})
 				.setFalseCallback(() -> {
-					Logger.info("SFTP uploading " + localTmp.length() + " " +
-						"bytes from \"" + path.toString() + "\" to \"" + p.getRemoteTargetFile() + "\" " +
-						(!p.getRemoteTargetFile().equals(p.getRemoteTmpFile()) ? " through temporary file \"" + p.getRemoteTmpFile() + "\"" : "") +
+					Logger.info("SFTP uploading " + localTmp.toFile().length() + " " +
+						"bytes from \"" + p.getLocalSourceFile().toString() + "\" to \"" + remoteTargetFile + "\" " +
+						(!remoteTargetFile.equals(p.getRemoteTmpFile()) ? " through temporary file \"" + p.getRemoteTmpFile() + "\"" : "") +
 						"...");
 
-					ssh.put(path, p.getRemoteTmpFile(), e -> {
+					ssh.put(localTmp, p.getRemoteTmpFile(), e -> {
 						die(new SkipException("error during SFTP file transfer: " + e.getMessage()));
 					});
 
@@ -995,7 +992,7 @@ public class Standard
 					if (p.isEncrypted())
 					{
 						// delete temporarily decrypted version of the file from local disk
-						FileSystem.unlink(localTmp.toPath());
+						FileSystem.unlink(localTmp);
 					}
 
 					// set ownership and permissions
@@ -1010,7 +1007,7 @@ public class Standard
 						.callImmediate();
 
 					// move into final location
-					execute("mv " + p.getRemoteTmpFile() + " " + p.getRemoteTargetFile())
+					execute("mv " + p.getRemoteTmpFile() + " " + remoteTargetFile)
 						.setSudoCmd(p.getSudoCmd())
 						.setExpectCode(0)
 						.callImmediate();
@@ -1104,7 +1101,7 @@ public class Standard
 		return " " + flag + " ";
 	}
 
-	private static final Pattern CHECKSUM_PATTERN = Pattern.compile("/[a-f0-9]{64}/");
+	private static final Pattern CHECKSUM_PATTERN = Pattern.compile("^([a-f0-9]{64})  .+");
 
 	/**
 	 * Check whether a file exists on the remote server's disk.
@@ -1145,18 +1142,18 @@ public class Standard
 							final Matcher matcher = CHECKSUM_PATTERN.matcher(out);
 							if (matcher.matches())
 							{
-								if (matcher.group(0).equals(
-									Crypto.computeHash(SHA_256,
-										FileSystem.readFileToBytes(p.getCompareLocalFile()))))
+								final String localChecksum = Crypto.computeHash(SHA_256,
+									FileSystem.readFileToBytes(p.getCompareLocalFile())).toLowerCase();
+								if (matcher.group(1).equals(localChecksum))
 								{
-									Logger.info("Remote file checksum of " + matcher.group(0) +
-										" matches checksum of local file " + p.getCompareLocalFile() + ".");
+									Logger.info("Remote file checksum matches checksum of local file " +
+										p.getCompareLocalFile() + ".");
 									p.invokeTrueCallback();
 								}
 								else
 								{
-									Logger.info("Remote file checksum of " + matcher.group(0) +
-										" did not match checksum of local file " + p.getCompareLocalFile() + ".");
+									Logger.info("Remote file checksum does not match checksum of local file " +
+										localChecksum + " " + p.getCompareLocalFile() + ".");
 									p.invokeFalseCallback();
 								}
 							}

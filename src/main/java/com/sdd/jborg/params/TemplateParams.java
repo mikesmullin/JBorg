@@ -1,20 +1,23 @@
 package com.sdd.jborg.params;
 
+import com.sdd.jborg.util.FileSystem;
+
+import java.nio.file.Path;
 import java.util.Map;
 
 public final class TemplateParams
 	extends Params
 {
-	private String localTemplateFile;
+	private Path localTemplateFile;
 
-	public String getLocalTemplateFile()
+	public Path getLocalTemplateFile()
 	{
 		return localTemplateFile;
 	}
 
 	public TemplateParams setLocalTemplateFile(final String localTemplateFile)
 	{
-		this.localTemplateFile = localTemplateFile;
+		this.localTemplateFile = FileSystem.getResourcePath(localTemplateFile);
 		return this;
 	}
 

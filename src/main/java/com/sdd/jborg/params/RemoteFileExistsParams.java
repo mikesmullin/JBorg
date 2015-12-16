@@ -2,10 +2,12 @@ package com.sdd.jborg.params;
 
 import com.sdd.jborg.util.Callback0;
 
+import java.nio.file.Path;
+
 public final class RemoteFileExistsParams extends Params
 {
 	private String path = "";
-	private String compareLocalFile;
+	private Path compareLocalFile;
 	private String compareChecksum;
 	private Sudoable sudoable = new Sudoable();
 	private Callback0 trueCallback;
@@ -71,12 +73,12 @@ public final class RemoteFileExistsParams extends Params
 		return this;
 	}
 
-	public String getCompareLocalFile()
+	public Path getCompareLocalFile()
 	{
 		return this.compareLocalFile;
 	}
 
-	public RemoteFileExistsParams setCompareLocalFile(final String CompareLocalFile)
+	public RemoteFileExistsParams setCompareLocalFile(final Path CompareLocalFile)
 	{
 		this.compareLocalFile = CompareLocalFile;
 		return this;

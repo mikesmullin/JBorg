@@ -1,5 +1,8 @@
 package com.sdd.jborg.params;
 
+import com.sdd.jborg.util.FileSystem;
+
+import java.nio.file.Path;
 import java.util.Map;
 
 public final class UploadParams extends Params
@@ -17,17 +20,22 @@ public final class UploadParams extends Params
 		return this;
 	}
 
-	private String remoteTargetFile;
+	private Path localSourceFile;
 
-	public String getRemoteTargetFile()
+	public Path getLocalSourceFile()
 	{
-		return remoteTargetFile;
+		return localSourceFile;
 	}
 
-	public UploadParams setRemoteTargetFile(final String finalTo)
+	public UploadParams setLocalSourceFile(final Path localSourceFile)
 	{
-		this.remoteTargetFile = finalTo;
+		this.localSourceFile = localSourceFile;
 		return this;
+	}
+
+	public UploadParams setLocalSourceFile(final String localSourceFile)
+	{
+		return setLocalSourceFile(FileSystem.getResourcePath(localSourceFile));
 	}
 
 	private boolean encrypted;

@@ -1,5 +1,6 @@
 package com.sdd.jborg;
 
+import com.sdd.jborg.util.FileSystem;
 import com.sdd.jborg.util.Logger;
 import com.sdd.jborg.util.Ssh;
 
@@ -14,13 +15,13 @@ public class Main
 		{
 			// encrypt com/wildworks/devops/ajc/files/ssl_certs.tar.gz
 			case "encrypt":
-				encryptLocalFile(args[1]);
+				encryptLocalFile(FileSystem.getResourcePath(args[1]));
 				done("Done.");
 				break;
 
 			// decrypt com/wildworks/devops/ajc/files/ssl_certs.tar.gz
 			case "decrypt":
-				decryptLocalFile(args[1]);
+				decryptLocalFile(FileSystem.getResourcePath(args[1]));
 				done("Done.");
 				break;
 		}
@@ -92,10 +93,7 @@ public class Main
 		catch (final InterruptedException ignored)
 		{
 		}
-		finally
-		{
-			Logger.err("Aborting." + (reason == null ? "" : " Reason: " + reason));
-			System.exit(1);
-		}
+		Logger.err("Aborting." + (reason == null ? "" : " Reason: " + reason));
+		System.exit(1);
 	}
 }

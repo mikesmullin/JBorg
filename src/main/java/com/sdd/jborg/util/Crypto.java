@@ -69,7 +69,7 @@ public class Crypto
 		try
 		{
 			return new SecretKeySpec(MessageDigest.getInstance(SHA_256.toString())
-				.digest(FileSystem.readFileToBytes("secret")), "AES");
+				.digest(FileSystem.readFileToBytes(FileSystem.getResourcePath("secret"))), "AES");
 		}
 		catch (NoSuchAlgorithmException e)
 		{

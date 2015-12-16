@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,66 +15,70 @@ import static com.sdd.jborg.scripts.Standard.*;
 
 public class FileSystem
 {
-	public static String readFileToString(final String path)
+	public static String readFileToString(final String file)
 	{
-		return new String(readFileToBytes(path), StandardCharsets.UTF_8);
+		return new String(readFileToBytes(getResourcePath(file)), StandardCharsets.UTF_8);
 	}
 
-	private static void giveUp(final String path, final Exception e)
+	private static void giveUp(final String file, final Exception e)
 	{
-		die(new RuntimeException("Unable to load " + path + ".", e));
+		die(new RuntimeException("Unable to find file \"" + file + "\".", e));
 	}
 
-	public static File findFile(final String path)
+	public static Path getResourcePath(final String file)
 	{
 		try
 		{
 			final ClassLoader classLoader = FileSystem.class.getClassLoader();
-			final File file = new File(classLoader.getResource(path).getFile());
-			return file;
+			final URL resource = classLoader.getResource(file);
+			if (resource != null)
+			{
+				return new File(resource.getFile()).toPath();
+			}
+			giveUp(file, null);
 		}
 		catch (final Exception e)
 		{
-			giveUp(path, e);
-			return null;
+			giveUp(file, e);
 		}
+		return new File("").toPath(); // will never be reached
 	}
 
-	public static FileReader getFileReader(final String path)
+	public static FileReader getFileReader(final Path file)
 	{
 		try
 		{
-			return new FileReader(findFile(path));
+			return new FileReader(file.toFile());
 		}
 		catch (final FileNotFoundException e)
 		{
-			giveUp(path, e);
+			giveUp(file.toString(), e);
 			return null;
 		}
 	}
 
-	public static byte[] readFileToBytes(final String path)
+	public static byte[] readFileToBytes(final Path file)
 	{
 		try
 		{
-			return Files.readAllBytes(findFile(path).toPath());
+			return Files.readAllBytes(file);
 		}
-		catch (IOException e)
+		catch (final IOException e)
 		{
-			giveUp(path, e);
-			return null;
+			giveUp(file.toString(), e);
+			return new byte[0]; // will never be reached
 		}
 	}
 
 	/**
 	 * Write string to local file system.
 	 */
-	public static void writeStringToFile(final Path path, final String content)
+	public static void writeStringToFile(final Path file, final String content)
 	{
 		PrintWriter writer = null;
 		try
 		{
-			writer = new PrintWriter(path.toString());
+			writer = new PrintWriter(file.toFile());
 			writer.write(content);
 		}
 		catch (final FileNotFoundException e)
@@ -90,12 +95,12 @@ public class FileSystem
 	/**
 	 * Write bytes to local file system.
 	 */
-	public static void writeBytesToFile(final File file, final byte[] content)
+	public static void writeBytesToFile(final Path file, final byte[] content)
 	{
 		FileOutputStream writer = null;
 		try
 		{
-			writer = new FileOutputStream(file);
+			writer = new FileOutputStream(file.toFile());
 			writer.write(content);
 		}
 		catch (final IOException e)
