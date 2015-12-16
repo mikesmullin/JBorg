@@ -9,6 +9,7 @@ public final class ExecuteParams extends Params
 	private int retryTimes;
 	private Integer expectCode;
 	private boolean ignoreErrors = false;
+	private String prefix = "";
 
 	public ExecuteParams setTest(final ScriptRemoteTestCallback testCb)
 		throws Standard.SkipException, Standard.AbortException
@@ -75,6 +76,17 @@ public final class ExecuteParams extends Params
 	public ExecuteParams setIgnoreErrors(final boolean ignoreErrors)
 	{
 		this.ignoreErrors = ignoreErrors;
+		return this;
+	}
+
+	public String getPrefix()
+	{
+		return prefix;
+	}
+
+	public ExecuteParams setPrefix(final String prefix)
+	{
+		this.prefix = prefix;
 		return this;
 	}
 }

@@ -24,6 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.sdd.jborg.params.*;
+import com.sdd.jborg.util.ValidationHelper;
 import org.reflections.Reflections;
 
 import static com.sdd.jborg.util.Crypto.Algorithm.*;
@@ -471,7 +472,7 @@ public class Standard
 			// TODO: could do this with simple while loop probably; would be less complex
 			final AtomicInteger triesRemaining = new AtomicInteger(p.getRetryTimes());
 			final Container<Callback0> _try = new Container<>();
-			_try.set(() -> ssh.cmd(p.getSudoCmd() + cmd, (code, out, err) -> {
+			_try.set(() -> ssh.cmd(p.getPrefix() + p.getSudoCmd() + cmd, (code, out, err) -> {
 				// TODO: implement regex and case-insensitive string search expectations
 				String error = null;
 				if (p.getExpectCode() == null && !p.isIgnoringErrors()) {
