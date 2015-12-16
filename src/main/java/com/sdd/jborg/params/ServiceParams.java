@@ -9,8 +9,9 @@ public final class ServiceParams extends Params
 		return action;
 	}
 
-	public void setAction(final String action)
+	public ServiceParams setAction(final String action)
 	{
 		this.action = action;
+		return this;
 	}
 }

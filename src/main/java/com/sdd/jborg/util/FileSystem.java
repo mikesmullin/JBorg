@@ -2,6 +2,7 @@ package com.sdd.jborg.util;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -23,7 +24,7 @@ public class FileSystem
 		die(new RuntimeException("Unable to load " + path + ".", e));
 	}
 
-	private static File findFile(final String path)
+	public static File findFile(final String path)
 	{
 		try
 		{
@@ -65,7 +66,7 @@ public class FileSystem
 	}
 
 	/**
-	 * Write file to local file system.
+	 * Write string to local file system.
 	 */
 	public static void writeStringToFile(final Path path, final String content)
 	{
@@ -83,6 +84,35 @@ public class FileSystem
 		{
 			if (writer != null)
 				writer.close();
+		}
+	}
+
+	/**
+	 * Write bytes to local file system.
+	 */
+	public static void writeBytesToFile(final File file, final byte[] content)
+	{
+		FileOutputStream writer = null;
+		try
+		{
+			writer = new FileOutputStream(file);
+			writer.write(content);
+		}
+		catch (final IOException e)
+		{
+			e.printStackTrace();
+		}
+		finally
+		{
+			if (writer != null)
+				try
+				{
+					writer.close();
+				}
+				catch (final IOException e)
+				{
+					e.printStackTrace();
+				}
 		}
 	}
 

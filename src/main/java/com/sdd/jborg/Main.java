@@ -9,6 +9,24 @@ public class Main
 {
 	public static void main(String[] args)
 	{
+		// miscellaneous cli utilities
+		switch (args[0].toLowerCase())
+		{
+			// encrypt com/wildworks/devops/ajc/files/ssl_certs.tar.gz
+			case "encrypt":
+				encryptLocalFile(args[1]);
+				done("Done.");
+				break;
+
+			// decrypt com/wildworks/devops/ajc/files/ssl_certs.tar.gz
+			case "decrypt":
+				decryptLocalFile(args[1]);
+				done("Done.");
+				break;
+		}
+
+
+		// main purpose
 		server.setFqdn(args[1]);
 
 		// pass 1: compilation
@@ -43,6 +61,12 @@ public class Main
 		}
 	}
 
+	public static void done(final String message)
+	{
+		Logger.info(message);
+		System.exit(0);
+	}
+
 	public static void die(final String reason)
 	{
 		die(reason, null);
@@ -55,7 +79,10 @@ public class Main
 
 	public static void die(final String reason, final Throwable detail)
 	{
-		Logger.err("Aborting." + (reason == null ? "" : " Reason: " + reason));
+		if (detail != null)
+		{
+			detail.printStackTrace();
+		}
 		try
 		{
 			// necessary or messages will print out-of-order.
@@ -67,10 +94,7 @@ public class Main
 		}
 		finally
 		{
-			if (detail != null)
-			{
-				detail.printStackTrace();
-			}
+			Logger.err("Aborting." + (reason == null ? "" : " Reason: " + reason));
 			System.exit(1);
 		}
 	}

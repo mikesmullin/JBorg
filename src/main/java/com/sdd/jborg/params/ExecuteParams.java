@@ -61,7 +61,7 @@ public final class ExecuteParams extends Params
 		return expectCode;
 	}
 
-	public ExecuteParams expect(final Integer code)
+	public ExecuteParams setExpectCode(final Integer code)
 	{
 		this.expectCode = code;
 		return this;

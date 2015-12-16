@@ -64,7 +64,7 @@ public class Hosts
 
 			// append ip and hostnames
 			Standard.execute("echo "+ ip +" "+ String.join(" ", existingList) +" | sudo tee -a /etc/hosts >/dev/null")
-				.expect(0)
+				.setExpectCode(0)
 				.callImmediate();
 		});
 	}

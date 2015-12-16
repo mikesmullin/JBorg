@@ -78,33 +78,41 @@ public class Crypto
 		}
 	}
 
-	public static String encrypt(final String s)
-	{
+	public static byte[] encrypt(final byte[] b) {
 		try
 		{
 			final Cipher cipher = Cipher.getInstance(CIPHER_TYPE);
 			cipher.init(Cipher.ENCRYPT_MODE, secret, iv);
-			return Base64.getEncoder().encodeToString(cipher.doFinal(s.getBytes(StandardCharsets.UTF_8)));
+			return cipher.doFinal(b);
 		}
-		catch (Exception e)
+		catch (final Exception e)
 		{
 			e.printStackTrace();
-			return "";
+			return new byte[0];
+		}
+	}
+
+	public static String encrypt(final String s)
+	{
+		return Base64.getEncoder().encodeToString(encrypt(s.getBytes(StandardCharsets.UTF_8)));
+	}
+
+	public static byte[] decrypt(final byte[] b) {
+		try
+		{
+			final Cipher cipher = Cipher.getInstance(CIPHER_TYPE);
+			cipher.init(Cipher.DECRYPT_MODE, secret, iv);
+			return cipher.doFinal(b);
+		}
+		catch (final Exception e)
+		{
+			e.printStackTrace();
+			return new byte[0];
 		}
 	}
 
 	public static String decrypt(final String s)
 	{
-		try
-		{
-			final Cipher cipher = Cipher.getInstance(CIPHER_TYPE);
-			cipher.init(Cipher.DECRYPT_MODE, secret, iv);
-			return new String(cipher.doFinal(Base64.getDecoder().decode(s)));
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-			return "";
-		}
+		return new String(decrypt(Base64.getDecoder().decode(s)));
 	}
 }

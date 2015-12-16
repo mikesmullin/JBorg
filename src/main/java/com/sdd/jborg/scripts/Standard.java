@@ -10,6 +10,8 @@ import com.sdd.jborg.util.Logger;
 import com.sdd.jborg.util.ModifiedStreamingTemplateEngine;
 import com.sdd.jborg.util.Ssh;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.file.Path;
@@ -359,9 +361,30 @@ public class Standard
 		return value == null || value.length < 1;
 	}
 
+	public static void encryptLocalFile(final String path)
+	{
+		// NOTICE: not streaming; file must fit in memory
+		FileSystem.writeBytesToFile(FileSystem.findFile(path),
+			Crypto.encrypt(
+				FileSystem.readFileToBytes(path)));
+	}
+
 	public static String encrypt(final String s)
 	{
 		return Crypto.encrypt(s);
+	}
+
+	public static void decryptLocalFile(final String path)
+	{
+		decryptLocalFile(path, path);
+	}
+
+	public static void decryptLocalFile(final String path, final String alternatePath)
+	{
+		// NOTICE: not streaming; file must fit in memory
+		FileSystem.writeBytesToFile(FileSystem.findFile(alternatePath),
+			Crypto.decrypt(
+				FileSystem.readFileToBytes(path)));
 	}
 
 	public static String decrypt(final String s)
@@ -449,27 +472,27 @@ public class Standard
 			final AtomicInteger triesRemaining = new AtomicInteger(p.getRetryTimes());
 			final Container<Callback0> _try = new Container<>();
 			_try.set(() -> ssh.cmd(p.getSudoCmd() + cmd, (code, out, err) -> {
+				// TODO: implement regex and case-insensitive string search expectations
 				String error = null;
-				// TODO: implement multiple types of expectations?
-				// for now just implementing code check because i think
-				// that was the most common case.
-				if (p.getExpectCode() != null)
+				if (p.getExpectCode() == null && !p.isIgnoringErrors()) {
+					p.setExpectCode(0);
+				}
+				// NOTICE: the order of these tests matters; they are depending on each other to avoid repeating operations
+				if (code != 0 && p.isIgnoringErrors())
 				{
-					if (code != 0)
-					{
-						if (code != p.getExpectCode())
-						{
-							error = "Expected exit code " + p.getExpectCode() + ", but got " + code + ".";
-						}
-						if (error == null)
-						{
-							Logger.info("NOTICE: Non-zero exit code was expected. Will continue.");
-						}
-						else if (p.isIgnoringErrors())
-						{
-							Logger.info("NOTICE: Non-zero exit code can be ignored. Will continue.");
-						}
-					}
+					Logger.info("NOTICE: Non-zero exit code can be ignored. Will continue.");
+				}
+				else if (code != 0 && code == p.getExpectCode())
+				{
+					Logger.info("NOTICE: Non-zero exit code "+ p.getExpectCode() +" was expected. Will continue.");
+				}
+				else if (code != 0 && !empty(p.getTest()))
+				{
+					Logger.info("NOTICE: We are just testing. Will continue.");
+				}
+				else if (!p.isIgnoringErrors() && code != p.getExpectCode())
+				{
+					error = "Expected exit code " + p.getExpectCode() + ", but got " + code + ".";
 				}
 
 				if (error != null)
@@ -484,13 +507,14 @@ public class Standard
 						die(new SkipException(error + " Tried " + p.getRetryTimes() + " times. Giving up."));
 					}
 				}
-
-				// TODO: wait until tries are over... DON'T invoke test on every try
-
-				if (!empty(p.getTest()))
+				else
 				{
-					handleException(() ->
-						p.getTest().call(code, out, err));
+					// NOTICE: here we wait until tries are over... DON'T invoke test on every try
+					if (!empty(p.getTest()))
+					{
+						handleException(() ->
+							p.getTest().call(code, out, err));
+					}
 				}
 			}));
 
@@ -651,7 +675,7 @@ public class Standard
 					execute("DEBIAN_FRONTEND=noninteractive apt-get install -y " + packages)
 						.setSudo(true)
 						.setRetry(3)
-						.expect(0)
+						.setExpectCode(0)
 						.callImmediate();
 				}).callImmediate();
 		});
@@ -672,7 +696,7 @@ public class Standard
 						execute("DEBIAN_FRONTEND=noninteractive apt-get " + ((p.isPurge() == true) ? "purge " : "uninstall ") + packages)
 							.setSudo(true)
 							.setRetry(3)
-							.expect(0)
+							.setExpectCode(0)
 							.callImmediate();
 					}
 				}).callImmediate();
@@ -684,19 +708,19 @@ public class Standard
 		return chainForCb(new Params(), p -> {
 			execute("dpkg --configure -a")
 				.setSudo(true)
-				.expect(0)
+				.setExpectCode(0)
 				.callImmediate();
 
 			execute("apt-get update")
 				.setSudo(true)
 				.setRetry(3)
-				.expect(0)
+				.setExpectCode(0)
 				.callImmediate();
 
 			execute("DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y")
 				.setSudo(true)
 				.setRetry(3)
-				.expect(0)
+				.setExpectCode(0)
 				.callImmediate();
 		});
 	}
@@ -755,7 +779,7 @@ public class Standard
 
 			now(execute("ln -s " + src + " " + target)
 				.setSudoCmd(p.getSudoCmd())
-				.expect(0));
+				.setExpectCode(0));
 		});
 	}
 
@@ -908,12 +932,30 @@ public class Standard
 	public static UploadParams upload(final Path path)
 	{
 		return chainForCb(new UploadParams(), p -> {
-			if (p.getRemoteTmpFile() == null)
+			if (p.getRemoteTargetFile() == null)
 				throw new AbortException("to is a required parameter");
 
 			final String ver = tmpFile(path.toString());
+			final File localTmp;
 
-			// TODO: implement file decryption
+			if (p.isEncrypted())
+			{
+				Logger.info("Decrypting file "+ path.toString() +" to temporary location on local disk...");
+				try
+				{
+					localTmp = File.createTempFile("local-"+ver, "");
+					decryptLocalFile(path.toString(), localTmp.getAbsolutePath());
+				}
+				catch (final IOException e)
+				{
+					die(e);
+					return;
+				}
+			}
+			else
+			{
+				localTmp = path.toFile();
+			}
 
 			if (p.getRemoteTargetFile() == null)
 			{
@@ -921,35 +963,58 @@ public class Standard
 				p.setRemoteTmpFile("/tmp/remote-" + ver);
 			}
 
-			// TODO: check if remote file exists
-
-			Logger.info("SFTP uploading " + path.toFile().length() + " " +
-				(p.isEncrypted() ? "decrypted " : "") +
-				"bytes from \"" + path + "\" to \"" + p.getRemoteTargetFile() + "\" " +
-				(!p.getRemoteTargetFile().equals(p.getRemoteTmpFile()) ? " through temporary file \"" + p.getRemoteTmpFile() + "\"" : "") +
-				"...");
-
-			ssh.put(path, p.getRemoteTmpFile(), e -> {
-				die(new SkipException("error during SFTP file transfer: " + e.getMessage()));
-			});
-
-			Logger.info("SFTP upload complete.");
-
-			// set ownership and permissions
-			chown(p.getRemoteTmpFile())
+			remoteFileExists(p.getRemoteTargetFile())
 				.setSudoCmd(p.getSudoCmd())
-				.setOwner(p.getOwner())
-				.setGroup(p.getGroup())
-				.callImmediate();
-			chmod(p.getRemoteTmpFile())
-				.setSudoCmd(p.getSudoCmd())
-				.setMode(p.getMode())
-				.callImmediate();
+				.setCompareLocalFile(localTmp.toString())
+				.setTrueCallback(() -> {
+					Logger.info("Upload would be pointless since checksums match; skipping to save time.");
 
-			// move into final location
-			execute("mv " + p.getRemoteTmpFile() + " " + p.getRemoteTargetFile())
-				.setSudoCmd(p.getSudoCmd())
-				.expect(0)
+					// set ownership and permissions
+					chown(p.getRemoteTmpFile())
+						.setSudoCmd(p.getSudoCmd())
+						.setOwner(p.getOwner())
+						.setGroup(p.getGroup())
+						.callImmediate();
+					chmod(p.getRemoteTmpFile())
+						.setSudoCmd(p.getSudoCmd())
+						.setMode(p.getMode())
+						.callImmediate();
+				})
+				.setFalseCallback(() -> {
+					Logger.info("SFTP uploading " + localTmp.length() + " " +
+						"bytes from \"" + path.toString() + "\" to \"" + p.getRemoteTargetFile() + "\" " +
+						(!p.getRemoteTargetFile().equals(p.getRemoteTmpFile()) ? " through temporary file \"" + p.getRemoteTmpFile() + "\"" : "") +
+						"...");
+
+					ssh.put(path, p.getRemoteTmpFile(), e -> {
+						die(new SkipException("error during SFTP file transfer: " + e.getMessage()));
+					});
+
+					Logger.info("SFTP upload complete.");
+
+					if (p.isEncrypted())
+					{
+						// delete temporarily decrypted version of the file from local disk
+						FileSystem.unlink(localTmp.toPath());
+					}
+
+					// set ownership and permissions
+					chown(p.getRemoteTmpFile())
+						.setSudoCmd(p.getSudoCmd())
+						.setOwner(p.getOwner())
+						.setGroup(p.getGroup())
+						.callImmediate();
+					chmod(p.getRemoteTmpFile())
+						.setSudoCmd(p.getSudoCmd())
+						.setMode(p.getMode())
+						.callImmediate();
+
+					// move into final location
+					execute("mv " + p.getRemoteTmpFile() + " " + p.getRemoteTargetFile())
+						.setSudoCmd(p.getSudoCmd())
+						.setExpectCode(0)
+						.callImmediate();
+				})
 				.callImmediate();
 		});
 	}
@@ -1064,6 +1129,7 @@ public class Standard
 						}
 						else
 						{
+							Logger.info("Remote file " + path + " does not exist.");
 							p.invokeFalseCallback();
 						}
 					})
@@ -1093,6 +1159,11 @@ public class Standard
 										" did not match checksum of local file " + p.getCompareLocalFile() + ".");
 									p.invokeFalseCallback();
 								}
+							}
+							else
+							{
+								Logger.info("Remote file " + path + " does not exist.");
+								p.invokeFalseCallback();
 							}
 						})
 						.callImmediate();
