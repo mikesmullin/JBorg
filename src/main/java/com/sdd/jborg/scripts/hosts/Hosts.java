@@ -1,6 +1,7 @@
-package com.sdd.jborg.scripts;
+package com.sdd.jborg.scripts.hosts;
 
 import com.sdd.jborg.params.*;
+import com.sdd.jborg.scripts.Standard;
 
 import java.util.ArrayList;
 import java.util.Arrays;

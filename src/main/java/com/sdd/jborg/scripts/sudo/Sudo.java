@@ -1,4 +1,4 @@
-package com.sdd.jborg.scripts;
+package com.sdd.jborg.scripts.sudo;
 
 import static com.sdd.jborg.scripts.Standard.*;
 
