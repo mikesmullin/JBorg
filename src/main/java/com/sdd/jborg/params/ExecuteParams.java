@@ -1,7 +1,5 @@
 package com.sdd.jborg.params;
 
-import com.sdd.jborg.scripts.Standard;
-
 public final class ExecuteParams extends Params
 {
 	private ScriptRemoteTestCallback testCb;
@@ -12,7 +10,6 @@ public final class ExecuteParams extends Params
 	private String prefix = "";
 
 	public ExecuteParams setTest(final ScriptRemoteTestCallback testCb)
-		throws Standard.SkipException, Standard.AbortException
 	{
 		this.testCb = testCb;
 		return this;

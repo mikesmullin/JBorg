@@ -403,7 +403,7 @@ public class Standard
 	/**
 	 * Will notify user and abort process.
 	 */
-	public static final class AbortException extends Exception
+	public static final class AbortException extends RuntimeException
 	{
 		public AbortException(String message)
 		{
@@ -414,7 +414,7 @@ public class Standard
 	/**
 	 * Will step out, notify user, and continue.
 	 */
-	public static final class SkipException extends Exception
+	public static final class SkipException extends RuntimeException
 	{
 		public SkipException(String message)
 		{
