@@ -7,7 +7,7 @@ import java.nio.file.Paths;
 import static com.sdd.jborg.scripts.Standard.*;
 
 public class Ant
-	implements Script
+	implements BorgScript
 {
 	static void setAttributes()
 	{

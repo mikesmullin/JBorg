@@ -7,9 +7,8 @@ import java.nio.file.Paths;
 import static com.sdd.jborg.scripts.Standard.*;
 
 public class Java
-	implements Script
+	implements BorgScript
 {
-
 	static void setAttributes()
 	{
 		server.attributes.put("java", new JsonObject()
@@ -63,19 +62,19 @@ public class Java
 					.setGroup("root")
 					.setMode("0755")
 					.setSudo(true));
-				flow.then(execute("rm -rf " + server.java.jvm_dir + "/" + server.java.jdk_version).setSudo(true));
-				flow.then(execute("mv /tmp/" + dl.extracts_to + "/ " + server.java.jvm_dir + "/" + server.java.jdk_version).setSudo(true));
-				flow.then(chown(server.java.jvm_dir + "/" + server.java.jdk_version)
-					.setRecursive(true)
-					.setOwner("root")
-					.setGroup("root")
-					.setMode("0755")
-					.setSudo(true));
-
-				flow.then(execute("update-alternatives --remove-all java").setSudo(true).setIgnoreErrors(true));
-				flow.then(execute("update-alternatives --install /usr/bin/java java '" + server.java.jvm_dir + "/" + server.java.jdk_version + "/bin/java' 1").setSudo(true));
-				flow.then(execute("update-alternatives --remove-all javac").setSudo(true).setIgnoreErrors(true));
-				flow.then(execute("update-alternatives --install /usr/bin/javac javac '" + server.java.jvm_dir + "/" + server.java.jdk_version + "/bin/javac' 1").setSudo(true));
+//				flow.then(execute("rm -rf " + server.java.jvm_dir + "/" + server.java.jdk_version).setSudo(true));
+//				flow.then(execute("mv /tmp/" + dl.extracts_to + "/ " + server.java.jvm_dir + "/" + server.java.jdk_version).setSudo(true));
+//				flow.then(chown(server.java.jvm_dir + "/" + server.java.jdk_version)
+//					.setRecursive(true)
+//					.setOwner("root")
+//					.setGroup("root")
+//					.setMode("0755")
+//					.setSudo(true));
+//
+//				flow.then(execute("update-alternatives --remove-all java").setSudo(true).setIgnoreErrors(true));
+//				flow.then(execute("update-alternatives --install /usr/bin/java java '" + server.java.jvm_dir + "/" + server.java.jdk_version + "/bin/java' 1").setSudo(true));
+//				flow.then(execute("update-alternatives --remove-all javac").setSudo(true).setIgnoreErrors(true));
+//				flow.then(execute("update-alternatives --install /usr/bin/javac javac '" + server.java.jvm_dir + "/" + server.java.jdk_version + "/bin/javac' 1").setSudo(true));
 
 				// TODO: could list more jdk binaries
 			}).callImmediate();

@@ -17,7 +17,7 @@ public final class TemplateParams
 		return localTemplateFile;
 	}
 
-	public TemplateParams setLocalTemplateFile(final Class<? extends Script> cls, final String... localTemplateFile)
+	public TemplateParams setLocalTemplateFile(final Class<? extends BorgScript> cls, final String... localTemplateFile)
 	{
 		this.localTemplateFile = FileSystem.getResourcePath(cls, localTemplateFile);
 		return this;

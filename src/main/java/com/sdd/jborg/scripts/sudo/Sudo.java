@@ -3,7 +3,7 @@ package com.sdd.jborg.scripts.sudo;
 import static com.sdd.jborg.scripts.Standard.*;
 
 public final class Sudo
-	implements Script
+	implements BorgScript
 {
 	@Override
 	public void included()

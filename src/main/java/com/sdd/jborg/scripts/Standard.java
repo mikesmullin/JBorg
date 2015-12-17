@@ -20,7 +20,6 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
 import java.util.Date;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,7 +27,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.sdd.jborg.params.*;
-import com.sdd.jborg.util.ValidationHelper;
 import org.reflections.Reflections;
 
 import static com.sdd.jborg.util.Crypto.Algorithm.*;
@@ -49,7 +47,7 @@ public class Standard
 	 * Otherwise, implementations must be explicitly included()
 	 * from other scripts to have any effect or to be ordered.
 	 */
-	public interface Script
+	public interface BorgScript
 	{
 		default boolean matches()
 		{
@@ -59,15 +57,15 @@ public class Standard
 		void included();
 	}
 
-	private static Set<Class<? extends Script>> scripts =
-		new Reflections(System.getProperty("namespace")).getSubTypesOf(Script.class);
+	private static Set<Class<? extends BorgScript>> scripts =
+		new Reflections(System.getProperty("namespace")).getSubTypesOf(BorgScript.class);
 
 	public static boolean includeAllMatching()
 	{
 		boolean foundOne = false;
-		for (final Class<? extends Script> script : scripts)
+		for (final Class<? extends BorgScript> script : scripts)
 		{
-			final Script instance;
+			final BorgScript instance;
 			try
 			{
 				instance = script.newInstance();
@@ -87,10 +85,10 @@ public class Standard
 
 	public static void includeIfPresent(final String className)
 	{
-		for (final Class<? extends Script> script : scripts)
+		for (final Class<? extends BorgScript> script : scripts)
 		{
 			if (className.equals(script.getSimpleName())) {
-				final Script instance;
+				final BorgScript instance;
 				try
 				{
 					instance = script.newInstance();
@@ -105,7 +103,7 @@ public class Standard
 		}
 	}
 
-	public static void include(final Class<? extends Script> cls)
+	public static void include(final Class<? extends BorgScript> cls)
 	{
 		try
 		{

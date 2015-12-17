@@ -3,7 +3,7 @@ package com.sdd.jborg.scripts.redis;
 import static com.sdd.jborg.scripts.Standard.*;
 
 public class RedisServer
-	implements Script
+	implements BorgScript
 {
 	@Override
 	public void included()
