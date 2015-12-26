@@ -1,10 +1,63 @@
 package com.sdd.jborg.scripts.sudo;
 
 import static com.sdd.jborg.scripts.Standard.*;
+import static com.sdd.jborg.scripts.sudo.Sudo.Attributes.*;
 
 public final class Sudo
 	implements BorgScript
 {
+	public static class Attributes
+	{
+		private static String defaults[] = {"!lecture,tty_tickets,!fqdn"};
+		private static String users[] = {};
+		private static String groups[] = {"sysadmin"};
+		public static boolean passwordless = false;
+		public static boolean includeSudoersD = false;
+		public static boolean agentForwarding = false;
+		private static String commandAliases[] = {};
+		public static String prefix = "/etc";
+
+		public static String[] getDefaults()
+		{
+			return defaults;
+		}
+
+		public static void setDefaults(final String... defaults)
+		{
+			Attributes.defaults = defaults;
+		}
+
+		public static String[] getUsers()
+		{
+			return users;
+		}
+
+		public static void setUsers(final String... users)
+		{
+			Attributes.users = users;
+		}
+
+		public static String[] getGroups()
+		{
+			return groups;
+		}
+
+		public static void setGroups(final String... groups)
+		{
+			Attributes.groups = groups;
+		}
+
+		public static String[] getCommandAliases()
+		{
+			return commandAliases;
+		}
+
+		public static void setCommandAliases(final String[] commandAliases)
+		{
+			Attributes.commandAliases = commandAliases;
+		}
+	}
+
 	@Override
 	public void included()
 	{
@@ -18,120 +71,23 @@ public final class Sudo
 				"#          Any change you make here WILL be overridden on assimilation.",
 				"#######################################################################",
 				"",
-				mapConcat(defaults, _default -> "Defaults " + _default + "\n"),
+				mapConcat(getDefaults(), _default -> "Defaults " + _default + "\n"),
 				(agentForwarding ? "Defaults env_keep+=SSH_AUTH_SOCK\n" : ""),
 				"",
 				"# User privilege specification",
 				"root ALL=(ALL) ALL",
 				"",
-				mapConcat(commandAliases, alias -> "Cmnd_Alias " + alias + "\n"),
+				mapConcat(getCommandAliases(), alias -> "Cmnd_Alias " + alias + "\n"),
 				"",
-				mapConcat(users, user ->
+				mapConcat(getUsers(), user ->
 					user + " ALL=(ALL) " + (passwordless ? "NOPASSWD:" : "") + "ALL\n"),
 				"",
-				mapConcat(groups, group ->
+				mapConcat(getGroups(), group ->
 					"# Members of the group " + group + " may gain root privileges\n" +
 						"%" + group + " ALL=(ALL) " + (passwordless ? "NOPASSWD:" : "") + "ALL\n")))
 			.setOwner("root")
 			.setGroup("root")
 			.setSudo(true)
 			.setMode("0440"));
-	}
-
-	private static String defaults[] = {"!lecture,tty_tickets,!fqdn"};
-	private static String users[] = {};
-	private static String groups[] = {"sysadmin"};
-	private static boolean passwordless = false;
-	private static boolean includeSudoersD = false;
-	private static boolean agentForwarding = false;
-	private static String commandAliases[] = {};
-	private static String prefix = "/etc";
-
-	public static String[] getDefaults()
-	{
-		return defaults;
-	}
-
-	public static Sudo setDefaults(final String... defaults)
-	{
-		Sudo.defaults = defaults;
-		return null;
-	}
-
-	public static String[] getUsers()
-	{
-		return users;
-	}
-
-	public static Sudo setUsers(final String... users)
-	{
-		Sudo.users = users;
-		return null;
-	}
-
-	public static String[] getGroups()
-	{
-		return groups;
-	}
-
-	public static Sudo setGroups(final String... groups)
-	{
-		Sudo.groups = groups;
-		return null;
-	}
-
-	public static boolean isPasswordless()
-	{
-		return passwordless;
-	}
-
-	public static Sudo setPasswordless(final boolean passwordless)
-	{
-		Sudo.passwordless = passwordless;
-		return null;
-	}
-
-	public static boolean isIncludeSudoersD()
-	{
-		return includeSudoersD;
-	}
-
-	public static Sudo setIncludeSudoersD(final boolean includeSudoersD)
-	{
-		Sudo.includeSudoersD = includeSudoersD;
-		return null;
-	}
-
-	public static boolean isAgentForwarding()
-	{
-		return agentForwarding;
-	}
-
-	public static Sudo setAgentForwarding(final boolean agentForwarding)
-	{
-		Sudo.agentForwarding = agentForwarding;
-		return null;
-	}
-
-	public static String[] getCommandAliases()
-	{
-		return commandAliases;
-	}
-
-	public static Sudo setCommandAliases(final String[] commandAliases)
-	{
-		Sudo.commandAliases = commandAliases;
-		return null;
-	}
-
-	public static String getPrefix()
-	{
-		return prefix;
-	}
-
-	public static Sudo setPrefix(final String prefix)
-	{
-		Sudo.prefix = prefix;
-		return null;
 	}
 }

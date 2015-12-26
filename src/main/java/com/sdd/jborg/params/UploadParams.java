@@ -34,7 +34,7 @@ public final class UploadParams extends Params
 		return this;
 	}
 
-	public UploadParams setLocalSourceFile(final Class<? extends BorgScript> cls, final String... localSourceFile)
+	public UploadParams setLocalSourceFile(final Class cls, final String... localSourceFile)
 	{
 		return setLocalSourceFile(FileSystem.getResourcePath(cls, localSourceFile));
 	}

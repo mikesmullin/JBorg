@@ -1,80 +1,101 @@
 package com.sdd.jborg.scripts.java;
 
-import com.sdd.jborg.util.JsonObject;
-
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.sdd.jborg.scripts.Standard.*;
+import static com.sdd.jborg.scripts.java.Java.Attributes.*;
 
 public class Java
 	implements BorgScript
 {
-	static void setAttributes()
+	public static class Attributes
 	{
-		server.attributes.put("java", new JsonObject()
-			.put("jdk_version", "6u33")
-			.put("jvm_dir", "/usr/lib/jvm")
-			.put("jdk_downloads", new JsonObject()
-				.put("6u33", new JsonObject()
-					.put("x86_64", new JsonObject()
-						.put("url", "PROVIDE-URL-YOURSELF")
-						.put("checksum", "PROVIDE-SHA256SUM-YOURSELF")
-						.put("extracts_to", "jdk1.6.0_33")))
-				.put("7u60", new JsonObject()
-					.put("x86_64", new JsonObject()
-						.put("url", "PROVIDE-URL-YOURSELF")
-						.put("checksum", "PROVIDE-SHA256SUM-YOURSELF")
-						.put("extracts_to", "jdk1.7.0_60")))));
+		public static Class<? extends JdkVersionOption> jdkVersion;
+		public static String jvmDir = "/usr/lib/jvm";
+
+		public static final class JdkDownloads
+		{
+			private static Map<Class<? extends JdkVersionOption>,
+				Map<Class<? extends JdkArchitectureOption>, Download>> jdkDownloads =
+				new HashMap<>();
+
+			public static void put(
+				final Class<? extends JdkVersionOption> ver,
+				final Class<? extends JdkArchitectureOption> arch,
+				final Download dl)
+			{
+				jdkDownloads.put(ver, new HashMap<Class<? extends JdkArchitectureOption>, Download>()
+				{{
+					put(arch, dl);
+				}});
+			}
+
+			public static Download get(
+				final Class<? extends JdkVersionOption> ver,
+				final Class<? extends JdkArchitectureOption> arch)
+			{
+				return jdkDownloads.get(ver).get(arch);
+			}
+		}
+
+		public static abstract class JdkVersionOption
+		{
+		}
+
+		public static abstract class JdkArchitectureOption
+		{
+		}
+
+		public static abstract class x86_64 extends JdkArchitectureOption
+		{
+		}
 	}
 
 	@Override
 	public void included()
 	{
-		setAttributes();
-
 		// validate version installed matches intended version
 		then(execute("java -version 2>&1").setTest((code, out, err) -> {
+			// NOTICE: we assume x86_64 architecture here, until differentiation is required.
+			final Download dl = JdkDownloads.get(jdkVersion, x86_64.class);
 			if (code == 0 &&
-				out.contains(server.attributes.getObject("java").getObject("jdk_downloads").getObject(
-					server.attributes.getObject("java").getString("jdk_version"))
-					.getObject("x86_64").getString("extracts_to").substring(3)))
+				out.contains(dl.getExtractsTo().substring(3)))
 			{
 				return;
 			}
 
-			final JsonObject dl = server.attributes.getObject("java").getObject("jdk_downloads").getObject(
-				server.attributes.getObject("java").getString("jdk_version"))
-				.getObject("x86_64");
-			final String file = Paths.get(dl.getString("url")).getFileName().toString();
+			final String file = Paths.get(dl.getUrl()).getFileName().toString();
 
 			Async.subFlow((flow) -> {
-				flow.then(download(dl.getString("url"), "/tmp/" + file)
-					.setChecksum(dl.getString("checksum"))
+				flow.then(download(dl.getUrl(), "/tmp/" + file)
+					.setChecksum(dl.getChecksum())
 					.setOwner("root")
 					.setGroup("root")
 					.setMode("0644")
 					.setSudo(true));
 
 				flow.then(execute("cd /tmp; tar zxvf " + file));
-				flow.then(directory(server.attributes.getObject("java").getString("jvm_dir"))
+				flow.then(directory(jvmDir)
 					.setRecursive(true)
 					.setOwner("root")
 					.setGroup("root")
 					.setMode("0755")
 					.setSudo(true));
-//				flow.then(execute("rm -rf " + server.java.jvm_dir + "/" + server.java.jdk_version).setSudo(true));
-//				flow.then(execute("mv /tmp/" + dl.extracts_to + "/ " + server.java.jvm_dir + "/" + server.java.jdk_version).setSudo(true));
-//				flow.then(chown(server.java.jvm_dir + "/" + server.java.jdk_version)
-//					.setRecursive(true)
-//					.setOwner("root")
-//					.setGroup("root")
-//					.setMode("0755")
-//					.setSudo(true));
-//
-//				flow.then(execute("update-alternatives --remove-all java").setSudo(true).setIgnoreErrors(true));
-//				flow.then(execute("update-alternatives --install /usr/bin/java java '" + server.java.jvm_dir + "/" + server.java.jdk_version + "/bin/java' 1").setSudo(true));
-//				flow.then(execute("update-alternatives --remove-all javac").setSudo(true).setIgnoreErrors(true));
-//				flow.then(execute("update-alternatives --install /usr/bin/javac javac '" + server.java.jvm_dir + "/" + server.java.jdk_version + "/bin/javac' 1").setSudo(true));
+				flow.then(execute("rm -rf " + jvmDir + "/" + jdkVersion).setSudo(true));
+				flow.then(execute("mv /tmp/" + dl.getExtractsTo() + "/ " + jvmDir + "/" + jdkVersion).setSudo(true));
+				flow.then(directory(jvmDir + "/" + jdkVersion)
+					.setRecursive(true)
+					.setOwner("root")
+					.setGroup("root")
+					.setMode("0755")
+					.setSudo(true));
+
+				flow.then(execute("update-alternatives --remove-all java").setSudo(true).setIgnoreErrors(true));
+				flow.then(execute("update-alternatives --install /usr/bin/java java '" + jvmDir + "/" + jdkVersion + "/bin/java' 1").setSudo(true));
+				flow.then(execute("update-alternatives --remove-all javac").setSudo(true).setIgnoreErrors(true));
+				flow.then(execute("update-alternatives --install /usr/bin/javac javac '" + jvmDir + "/" + jdkVersion + "/bin/javac' 1").setSudo(true));
 
 				// TODO: could list more jdk binaries
 			}).callImmediate();

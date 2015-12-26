@@ -6,7 +6,6 @@ import com.sdd.jborg.util.Container;
 import com.sdd.jborg.util.Crypto;
 import com.sdd.jborg.util.FileSystem;
 import com.sdd.jborg.util.Func1;
-import com.sdd.jborg.util.JsonObject;
 import com.sdd.jborg.util.Logger;
 import com.sdd.jborg.util.ModifiedStreamingTemplateEngine;
 import com.sdd.jborg.util.Ssh;
@@ -120,7 +119,6 @@ public class Standard
 
 	public static final class Server
 	{
-		public final JsonObject attributes = new JsonObject();
 		public final String timestamp = (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss XX").format(new Date()));
 
 		private static final Pattern FQDN_PATTERN = Pattern.compile(
@@ -699,7 +697,7 @@ public class Standard
 					}
 					else
 					{
-						execute("DEBIAN_FRONTEND=noninteractive apt-get " + ((p.isPurge() == true) ? "purge " : "uninstall ") + packages)
+						execute("DEBIAN_FRONTEND=noninteractive apt-get " + (p.isPurge() ? "purge " : "uninstall ") + packages)
 							.setSudo(true)
 							.setRetry(3)
 							.setExpectCode(0)
@@ -1022,6 +1020,49 @@ public class Standard
 				})
 				.callImmediate();
 		});
+	}
+
+	/**
+	 * This object is generically useful within BorgScript Attributes classes.
+	 */
+	public static class Download
+	{
+		private String url;
+		private String checksum;
+		private String extractsTo;
+
+		public Download setUrl(final String url)
+		{
+			this.url = url;
+			return this;
+		}
+
+		public Download setChecksum(final String checksum)
+		{
+			this.checksum = checksum;
+			return this;
+		}
+
+		public Download setExtractsTo(final String extractsTo)
+		{
+			this.extractsTo = extractsTo;
+			return this;
+		}
+
+		public String getUrl()
+		{
+			return url;
+		}
+
+		public String getChecksum()
+		{
+			return checksum;
+		}
+
+		public String getExtractsTo()
+		{
+			return extractsTo;
+		}
 	}
 
 	/**

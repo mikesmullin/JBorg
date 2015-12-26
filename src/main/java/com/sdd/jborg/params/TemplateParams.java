@@ -17,7 +17,7 @@ public final class TemplateParams
 		return localTemplateFile;
 	}
 
-	public TemplateParams setLocalTemplateFile(final Class<? extends BorgScript> cls, final String... localTemplateFile)
+	public TemplateParams setLocalTemplateFile(final Class cls, final String... localTemplateFile)
 	{
 		this.localTemplateFile = FileSystem.getResourcePath(cls, localTemplateFile);
 		return this;
@@ -36,14 +36,14 @@ public final class TemplateParams
 		return this;
 	}
 
-	private Map variables = new HashMap<String, Object>();
+	private Map<String, Object> variables = new HashMap<>();
 
-	public Map getVariables()
+	public Map<String, Object> getVariables()
 	{
 		return variables;
 	}
 
-	public TemplateParams setVariables(final Map variables)
+	public TemplateParams setVariables(final Map<String, Object> variables)
 	{
 		this.variables = variables;
 		return this;
